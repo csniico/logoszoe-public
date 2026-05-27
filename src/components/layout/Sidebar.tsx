@@ -405,9 +405,8 @@ export function Sidebar() {
           "flex items-center gap-3 px-4 h-14 border-b border-primary-100 flex-shrink-0",
           collapsed && "justify-center px-0"
         )}>
-          <div className="w-8 h-8 rounded-lg bg-primary-700 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">LZ</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.png" alt="Logos Zoe" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
           {!collapsed && <span className="font-semibold text-primary-900 text-sm tracking-wide">Logos Zoe</span>}
         </div>
 
@@ -497,9 +496,8 @@ export function MobileHeader() {
 
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary-700 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">LZ</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icon.png" alt="Logos Zoe" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
             <span className="font-semibold text-primary-900 text-sm tracking-wide">Logos Zoe</span>
           </div>
 
