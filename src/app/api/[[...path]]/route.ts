@@ -23,8 +23,13 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
 
   // Stream the response back, forwarding status + headers
   const responseHeaders = new Headers(res.headers);
-  // Remove hop-by-hop headers that aren't valid in a proxied response
+  // Remove hop-by-hop headers that aren't valid in a proxied response.
   responseHeaders.delete("transfer-encoding");
+  // Node's fetch auto-decodes compressed bodies, so the body we forward is
+  // already plain text/JSON. Strip these to prevent the browser from trying
+  // to decompress what is already decoded (ERR_CONTENT_DECODING_FAILED).
+  responseHeaders.delete("content-encoding");
+  responseHeaders.delete("content-length"); // decoded length differs from compressed
 
   return new NextResponse(res.body, {
     status:  res.status,
