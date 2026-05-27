@@ -182,7 +182,11 @@ function SearchModal({
     : scopeResults.length > 0;
 
   return (
-    <div className="fixed top-14 left-64 right-0 z-30 px-6 pt-3 pb-6 pointer-events-none">
+    <div className="fixed top-14 z-30 px-6 pt-3 pb-6 pointer-events-none"
+         style={{
+           left:  'max(256px, calc(50vw - 720px + 256px))',
+           right: 'max(0px,   calc(50vw - 720px))',
+         }}>
       {/* Card */}
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden pointer-events-auto max-h-[78vh] flex flex-col">
 
@@ -441,12 +445,12 @@ export function TopBar() {
       {/* Backdrop — clicking outside closes modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 top-14 lg:left-64 z-20"
+          className="fixed inset-0 top-14 z-20"
           onClick={closeModal}
         />
       )}
 
-      <header className="hidden lg:flex fixed top-0 left-64 right-0 h-14 bg-white border-b border-primary-100 z-30 items-center px-6 gap-4">
+      <header className="hidden lg:flex sticky top-0 w-full h-14 bg-white border-b border-primary-100 z-30 items-center px-6 gap-4">
         {/* Left spacer */}
         <div className="flex-1" />
 
