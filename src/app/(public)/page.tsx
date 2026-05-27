@@ -167,9 +167,8 @@ export default function LandingPage() {
       <footer className="border-t border-gray-100 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">LZ</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icon.png" alt="Logos Zoe" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
             <span className="font-semibold text-gray-900 text-sm">Logos Zoe</span>
           </div>
           <p className="text-sm text-gray-400">© {new Date().getFullYear()} Logos Zoe. All rights reserved.</p>
