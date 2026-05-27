@@ -48,7 +48,9 @@ export interface Article {
   imageUrl?: string;
   published: boolean;
   hits?: number;
+  biblePassages?: { ref: string; passage: string[] }[];
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthResponse {
