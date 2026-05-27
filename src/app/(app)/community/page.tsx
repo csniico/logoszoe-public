@@ -10,8 +10,11 @@ import {
   Send,
   EyeOff,
   Loader2,
+  ImagePlus,
+  X,
+  ZoomIn,
 } from "lucide-react";
-import { communityApi, CommunityPost } from "@/lib/api";
+import { communityApi, storageApi, CommunityPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -102,6 +105,26 @@ function PostSkeleton() {
   );
 }
 
+// ── Image lightbox ────────────────────────────────────────────────────────────
+
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" aria-label="Close">
+        <X size={20} />
+      </button>
+      <img src={src} alt="" className="max-w-[90vw] max-h-[90vh] rounded-xl object-contain shadow-2xl" onClick={(e) => e.stopPropagation()} />
+    </div>
+  );
+}
+
 // ── Post card ─────────────────────────────────────────────────────────────────
 
 function PostCard({
@@ -119,26 +142,20 @@ function PostCard({
 }) {
   const displayName = post.anonymous ? "Anonymous" : (post.userName ?? "Unknown");
   const isOwn = !!currentUserId && post.userId === currentUserId;
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const closeLightbox = useCallback(() => setLightboxSrc(null), []);
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-5">
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
-        {post.anonymous ? (
-          <AnonAvatar />
-        ) : (
-          <Avatar name={displayName} avatarUrl={post.userAvatarUrl} />
-        )}
+        {post.anonymous ? <AnonAvatar /> : <Avatar name={displayName} avatarUrl={post.userAvatarUrl} />}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900">{displayName}</p>
           <p className="text-xs text-gray-400">{timeAgo(post.createdAt)}</p>
         </div>
         {isOwn && (
-          <button
-            onClick={() => onDelete(post._id)}
-            className="p-1.5 text-gray-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 flex-shrink-0"
-            title="Delete post"
-          >
+          <button onClick={() => onDelete(post._id)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 flex-shrink-0" title="Delete post">
             <Trash2 size={14} />
           </button>
         )}
@@ -146,55 +163,59 @@ function PostCard({
 
       {/* Text */}
       <Link href={`/community/${post._id}`}>
-        <p className="text-sm text-gray-700 leading-relaxed mb-3 hover:text-gray-900 transition-colors">
-          {post.text}
-        </p>
+        <p className="text-sm text-gray-700 leading-relaxed mb-3 hover:text-gray-900 transition-colors">{post.text}</p>
       </Link>
 
       {/* Images */}
       {post.images.length > 0 && (
         <div className={`grid gap-1.5 mb-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
           {post.images.map((img, i) => (
-            <img
-              key={i}
-              src={img.url}
-              alt=""
-              className="w-full rounded-lg object-cover max-h-64"
-            />
+            <button key={i} type="button" onClick={() => setLightboxSrc(img.url)} className="relative group rounded-lg overflow-hidden focus:outline-none">
+              <img src={img.url} alt="" className="w-full rounded-lg object-cover max-h-64" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <ZoomIn size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+              </div>
+            </button>
           ))}
         </div>
       )}
 
       {/* Actions */}
       <div className="flex items-center gap-4 border-t border-gray-50 pt-3">
-        <button
-          onClick={() => onLike(post._id)}
-          className={`flex items-center gap-1.5 text-xs transition-colors ${
-            post.liked ? "text-red-500" : "text-gray-400 hover:text-red-400"
-          }`}
-        >
+        <button onClick={() => onLike(post._id)} className={`flex items-center gap-1.5 text-xs transition-colors ${post.liked ? "text-red-500" : "text-gray-400 hover:text-red-400"}`}>
           <Heart size={13} fill={post.liked ? "currentColor" : "none"} />
           {post.likeCount > 0 && <span>{post.likeCount}</span>}
         </button>
 
-        <Link
-          href={`/community/${post._id}`}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-900 transition-colors"
-        >
+        <Link href={`/community/${post._id}`} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-900 transition-colors">
           <MessageCircle size={13} />
-          {post.replyCount > 0 && <span>{post.replyCount}</span>}
+          {post.replyCount > 0 ? <span>{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span> : <span>Reply</span>}
         </Link>
 
-        <button
-          onClick={() => onBookmark(post._id)}
-          className={`flex items-center gap-1.5 text-xs transition-colors ml-auto ${
-            post.bookmarked ? "text-gray-900" : "text-gray-400 hover:text-gray-900"
-          }`}
-        >
+        <button onClick={() => onBookmark(post._id)} className={`flex items-center gap-1.5 text-xs transition-colors ml-auto ${post.bookmarked ? "text-gray-900" : "text-gray-400 hover:text-gray-900"}`}>
           <Bookmark size={13} fill={post.bookmarked ? "currentColor" : "none"} />
         </button>
       </div>
+
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={closeLightbox} />}
     </div>
+  );
+}
+
+// ── Shared image upload hook ───────────────────────────────────────────────────
+
+interface Attachment { file: File; preview: string; }
+
+async function uploadAttachments(attachments: Attachment[]): Promise<{ url: string; key: string }[]> {
+  return Promise.all(
+    attachments.map(async ({ file }) => {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const key = `community/${crypto.randomUUID()}.${ext}`;
+      const { uploadUrl, fileKey, fileUrl } = await storageApi.getPresignedUrl(key, file.type);
+      // Upload directly to S3 — do NOT go through the Next.js proxy
+      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      return { url: fileUrl, key: fileKey };
+    }),
   );
 }
 
@@ -215,16 +236,39 @@ function ComposeBox({
   const [anonymous, setAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const MAX = 400;
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    const remaining = 4 - attachments.length;
+    if (remaining <= 0) return;
+    selected.slice(0, remaining).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (evt) =>
+        setAttachments((prev) =>
+          prev.length < 4 ? [...prev, { file, preview: evt.target?.result as string }] : prev,
+        );
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removeAttachment(i: number) {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== i));
+  }
 
   async function handleSubmit() {
     if (!text.trim() || !currentUserId) return;
     setSubmitting(true);
     setError(null);
     try {
-      const post = await communityApi.createPost({ text: text.trim(), anonymous });
+      const images = attachments.length > 0 ? await uploadAttachments(attachments) : [];
+      const post = await communityApi.createPost({ text: text.trim(), anonymous, images });
       setText("");
       setAnonymous(false);
+      setAttachments([]);
       onPosted(post);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to post");
@@ -244,11 +288,7 @@ function ComposeBox({
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6">
       <div className="flex gap-3">
-        {anonymous ? (
-          <AnonAvatar />
-        ) : (
-          <Avatar name={userName} avatarUrl={userAvatarUrl} />
-        )}
+        {anonymous ? <AnonAvatar /> : <Avatar name={userName} avatarUrl={userAvatarUrl} />}
         <div className="flex-1">
           <textarea
             placeholder="Share something with the community…"
@@ -258,25 +298,71 @@ function ComposeBox({
             onChange={(e) => setText(e.target.value)}
             className="w-full resize-none text-sm text-gray-800 placeholder:text-gray-400 outline-none border border-gray-200 rounded-lg p-3 focus:border-gray-500 focus:ring-2 focus:ring-gray-100 transition-colors"
           />
+
+          {/* Attachment previews */}
+          {attachments.length > 0 && (
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {attachments.map((att, i) => (
+                <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                  <img src={att.preview} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(i)}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
+              {attachments.length < 4 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors text-xs"
+                >
+                  <ImagePlus size={16} />
+                  Add
+                </button>
+              )}
+            </div>
+          )}
+
           {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+
           <div className="flex items-center justify-between mt-2">
-            {/* Anonymous toggle */}
-            <button
-              onClick={() => setAnonymous((a) => !a)}
-              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
-                anonymous
-                  ? "bg-gray-100 text-gray-700 font-medium"
-                  : "text-gray-400 hover:bg-gray-50"
-              }`}
-            >
-              <EyeOff size={12} />
-              Anonymous
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Attach image */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={attachments.length >= 4}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title={attachments.length >= 4 ? "Maximum 4 images" : "Attach images"}
+              >
+                <ImagePlus size={13} />
+                {attachments.length > 0 ? `${attachments.length}/4` : "Photo"}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+
+              {/* Anonymous toggle */}
+              <button
+                onClick={() => setAnonymous((a) => !a)}
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors ${anonymous ? "bg-gray-100 text-gray-700 font-medium" : "text-gray-400 hover:bg-gray-50"}`}
+              >
+                <EyeOff size={12} />
+                Anonymous
+              </button>
+            </div>
 
             <div className="flex items-center gap-3">
-              <span className={`text-xs ${text.length >= MAX ? "text-red-400" : "text-gray-300"}`}>
-                {MAX - text.length}
-              </span>
+              <span className={`text-xs ${text.length >= MAX ? "text-red-400" : "text-gray-300"}`}>{MAX - text.length}</span>
               <button
                 onClick={handleSubmit}
                 disabled={!text.trim() || submitting}

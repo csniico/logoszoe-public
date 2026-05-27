@@ -904,7 +904,7 @@ export const communityApi = {
     return apiFetch<CommunityPost[]>(`/posts/${id}/replies?${params}`);
   },
   /** POST /posts — requires auth */
-  createPost(data: { text: string; parentId?: string; anonymous?: boolean }) {
+  createPost(data: { text: string; parentId?: string; anonymous?: boolean; images?: { url: string; key: string }[] }) {
     return apiFetch<CommunityPost>("/posts", {
       method: "POST",
       body: JSON.stringify(data),
