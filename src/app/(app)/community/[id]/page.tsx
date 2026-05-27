@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { use } from "react";
 import Link from "next/link";
 import {
@@ -12,6 +12,8 @@ import {
   Send,
   EyeOff,
   Loader2,
+  X,
+  ZoomIn,
 } from "lucide-react";
 import { communityApi, CommunityPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -41,6 +43,46 @@ function initials(name: string) {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+}
+
+// ── Image lightbox ────────────────────────────────────────────────────────────
+
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+        aria-label="Close image"
+      >
+        <X size={20} />
+      </button>
+
+      {/* Image — stop propagation so clicking the image itself doesn't close */}
+      <img
+        src={src}
+        alt=""
+        className="max-w-[90vw] max-h-[90vh] rounded-xl object-contain shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
 }
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
@@ -102,6 +144,8 @@ function PostBody({
 }) {
   const displayName = post.anonymous ? "Anonymous" : (post.userName ?? "Unknown");
   const isOwn = !!currentUserId && post.userId === currentUserId;
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const closeLightbox = useCallback(() => setLightboxSrc(null), []);
 
   return (
     <div className={`bg-white rounded-xl border border-gray-100 p-5 ${isRoot ? "mb-1" : ""}`}>
@@ -131,10 +175,23 @@ function PostBody({
       {post.images.length > 0 && (
         <div className={`grid gap-1.5 mb-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
           {post.images.map((img, i) => (
-            <img key={i} src={img.url} alt="" className="w-full rounded-lg object-cover max-h-72" />
+            <button
+              key={i}
+              type="button"
+              onClick={() => setLightboxSrc(img.url)}
+              className="relative group rounded-lg overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+            >
+              <img src={img.url} alt="" className="w-full rounded-lg object-cover max-h-72" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <ZoomIn size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+              </div>
+            </button>
           ))}
         </div>
       )}
+
+      {/* Lightbox */}
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={closeLightbox} />}
 
       {/* Actions */}
       <div className="flex items-center gap-4 border-t border-gray-50 pt-3">
