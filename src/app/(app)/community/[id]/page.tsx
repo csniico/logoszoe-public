@@ -530,7 +530,7 @@ export default function PostDetailPage({
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6"
       >
         <ChevronLeft size={16} />
-        {post.parentId ? "View parent" : "Community"}
+        {post.parentId ? "View post" : "Community"}
       </Link>
 
       {/* Root post */}
