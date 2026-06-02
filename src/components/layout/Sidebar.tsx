@@ -15,7 +15,6 @@ import {
   Heart,
   ShoppingBag,
   PlayCircle,
-  Send,
   LogOut,
   User,
   ChevronLeft,
@@ -54,7 +53,6 @@ const bottomItems = [
   { label: "Prayer",      href: "/prayer",       icon: Heart },
   { label: "Shop",        href: "/shop",         icon: ShoppingBag },
   { label: "Bible",       href: "/bible",        icon: BookOpen },
-  { label: "Submissions", href: "/submissions",  icon: Send },
 ];
 
 // ── Category dot ──────────────────────────────────────────────────────────────

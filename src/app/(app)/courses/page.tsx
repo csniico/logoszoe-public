@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { courseApi, Course, CourseProgress } from "@/lib/api";
+import { courseApi, Course, CourseProgress, COURSE_MODULES, CourseModule } from "@/lib/api";
 import { GraduationCap } from "lucide-react";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -15,7 +15,14 @@ function formatDuration(sec?: number) {
   return `${m}m`;
 }
 
-type FilterType = "all" | "progress" | "not-started" | "completed";
+const MODULE_COLORS: Record<CourseModule, string> = {
+  foundation:   "bg-emerald-50 text-emerald-700 border-emerald-100",
+  intermediate: "bg-amber-50 text-amber-700 border-amber-100",
+  advanced:     "bg-rose-50 text-rose-700 border-rose-100",
+};
+
+type FilterStatus = "all" | "progress" | "not-started" | "completed";
+type FilterModule = "all" | CourseModule;
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -52,6 +59,9 @@ function CourseCard({ course, progress }: { course: Course; progress?: CoursePro
   const dur = formatDuration(course.totalDurationSec);
   if (dur) metaParts.push(dur);
 
+  const moduleLabel = COURSE_MODULES.find((m) => m.value === course.module)?.label ?? course.module;
+  const moduleBadgeClass = MODULE_COLORS[course.module] ?? "bg-gray-100 text-gray-500 border-gray-100";
+
   return (
     <Link
       href={`/courses/${course._id}`}
@@ -80,6 +90,10 @@ function CourseCard({ course, progress }: { course: Course; progress?: CoursePro
             In Progress
           </div>
         )}
+        {/* Module badge — top right */}
+        <span className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-sm ${moduleBadgeClass}`}>
+          {moduleLabel}
+        </span>
       </div>
 
       {/* Content */}
@@ -92,9 +106,11 @@ function CourseCard({ course, progress }: { course: Course; progress?: CoursePro
           <p className="text-[11px] text-gray-400 mb-1">{metaParts.join(" · ")}</p>
         )}
 
-        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-4 mt-1">
-          {course.description}
-        </p>
+        {course.description && (
+          <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-4 mt-1">
+            {course.description}
+          </p>
+        )}
 
         {/* Progress section */}
         {started && (
@@ -135,18 +151,24 @@ function CourseCard({ course, progress }: { course: Course; progress?: CoursePro
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-const FILTER_PILLS: { value: FilterType; label: string }[] = [
-  { value: "all", label: "All Journeys" },
-  { value: "progress", label: "In Progress" },
-  { value: "not-started", label: "Not Started" },
-  { value: "completed", label: "Completed" },
+const STATUS_PILLS: { value: FilterStatus; label: string }[] = [
+  { value: "all",         label: "All Journeys"  },
+  { value: "progress",    label: "In Progress"   },
+  { value: "not-started", label: "Not Started"   },
+  { value: "completed",   label: "Completed"     },
+];
+
+const MODULE_PILLS: { value: FilterModule; label: string }[] = [
+  { value: "all",          label: "All Modules"  },
+  ...COURSE_MODULES.map((m) => ({ value: m.value as FilterModule, label: m.label })),
 ];
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, CourseProgress>>({});
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
+  const [moduleFilter, setModuleFilter] = useState<FilterModule>("all");
 
   useEffect(() => {
     courseApi
@@ -167,16 +189,19 @@ export default function CoursesPage() {
   }, []);
 
   const filteredCourses = courses.filter((c) => {
+    // Module filter
+    if (moduleFilter !== "all" && c.module !== moduleFilter) return false;
+    // Status filter
     const p = progressMap[c._id];
     const lessonsCompleted = p?.lessonsCompleted ?? 0;
     const pct =
       p && p.totalLessons > 0
         ? Math.round((p.lessonsCompleted / p.totalLessons) * 100)
         : 0;
-    if (filter === "all") return true;
-    if (filter === "progress") return lessonsCompleted > 0 && pct < 100;
-    if (filter === "not-started") return lessonsCompleted === 0;
-    if (filter === "completed") return pct === 100;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "progress") return lessonsCompleted > 0 && pct < 100;
+    if (statusFilter === "not-started") return lessonsCompleted === 0;
+    if (statusFilter === "completed") return pct === 100;
     return true;
   });
 
@@ -193,16 +218,33 @@ export default function CoursesPage() {
         </p>
       </div>
 
-      {/* Filter pills */}
-      <div className="flex items-center gap-2 flex-wrap mb-8">
-        {FILTER_PILLS.map((pill) => (
+      {/* Module pills */}
+      <div className="flex items-center gap-2 flex-wrap mb-3">
+        {MODULE_PILLS.map((pill) => (
           <button
             key={pill.value}
-            onClick={() => setFilter(pill.value)}
+            onClick={() => setModuleFilter(pill.value)}
             className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${
-              filter === pill.value
+              moduleFilter === pill.value
                 ? "bg-gray-900 text-white"
                 : "text-gray-500 hover:bg-gray-100"
+            }`}
+          >
+            {pill.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Status pills */}
+      <div className="flex items-center gap-2 flex-wrap mb-8">
+        {STATUS_PILLS.map((pill) => (
+          <button
+            key={pill.value}
+            onClick={() => setStatusFilter(pill.value)}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 border ${
+              statusFilter === pill.value
+                ? "border-gray-300 bg-gray-100 text-gray-700"
+                : "border-transparent text-gray-400 hover:bg-gray-50"
             }`}
           >
             {pill.label}

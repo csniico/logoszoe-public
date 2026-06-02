@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/auth/login", "/auth/register", "/auth/verify-email", "/auth/forgot-password", "/auth/callback"];
+const PUBLIC_PATHS = [
+  "/",
+  "/auth/login",
+  "/auth/register",
+  "/auth/verify-email",
+  "/auth/forgot-password",
+  "/auth/callback",
+];
 
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths and Next.js internals
+  // Allow public paths, Next.js internals, API routes, and static files
   if (
     PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "?")) ||
     pathname.startsWith("/_next") ||
@@ -16,7 +23,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for auth token cookie (set by tokens.ts on the client)
+  // Check for the auth token cookie (written by tokens.ts on the client after login).
+  // This is a presence check only — real JWT validation happens on the NestJS backend.
   const token = request.cookies.get("lz_token")?.value;
   if (!token) {
     const loginUrl = new URL("/auth/login", request.url);

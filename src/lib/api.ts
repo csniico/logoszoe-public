@@ -82,7 +82,9 @@ async function refreshAccessToken(): Promise<string> {
   });
 
   if (!res.ok) {
-    clearTokens();
+    // Do NOT call clearTokens() here — let AuthContext decide to sign out.
+    // Prematurely clearing tokens here causes any 401 on any endpoint to
+    // cascade into a full sign-out, even if other tokens are still valid.
     throw new ApiError(401, "Session expired. Please sign in again.");
   }
 
@@ -452,18 +454,31 @@ export const bookmarkApi = {
 
 // ── Course types + endpoints ──────────────────────────────────────────────────
 
+export type CourseModule = "foundation" | "intermediate" | "advanced";
+
+export const COURSE_MODULES: { value: CourseModule; label: string }[] = [
+  { value: "foundation",   label: "Foundation"   },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced",     label: "Advanced"     },
+];
+
+export interface EmbeddedQuestion {
+  text: string;
+}
+
 export interface Course {
   _id: string;
   title: string;
-  description: string;
-  imageUrl: string;
+  module: CourseModule;
+  imageUrl?: string;
   imageKey?: string;
+  description?: string;
   lessonCount?: number;
   totalDurationSec?: number;
   createdAt?: string;
 }
 
-export type LessonType = "text" | "document" | "video" | "audio" | "link";
+export type LessonType = "text" | "video" | "audio";
 
 export interface Lesson {
   _id: string;
@@ -475,6 +490,10 @@ export interface Lesson {
   contentKey?: string;
   durationSec?: number;
   description?: string;
+  studyQuestions?: EmbeddedQuestion[];
+  reflectionQuestions?: EmbeddedQuestion[];
+  prayer?: string;
+  furtherStudy?: string;
 }
 
 export interface CourseVideo {
@@ -493,40 +512,6 @@ export interface CourseProgress {
   completedLessonIds: string[];
 }
 
-export interface QuestionOption {
-  label: string;
-  value: string;
-}
-
-export interface Question {
-  _id: string;
-  courseId: string;
-  lessonId: string;
-  text: string;
-  type: "multiple_choice" | "text_input";
-  options: QuestionOption[];
-  correctOption?: string;
-  order: number;
-}
-
-export interface Submission {
-  _id: string;
-  courseId: string;
-  lessonId: string;
-  userId: string;
-  responses: { questionId: string; userResponse: string }[];
-}
-
-export interface Remark {
-  _id: string;
-  submissionId: string;
-  authorId: string;
-  authorName: string;
-  authorRole: "admin" | "learner";
-  content: string;
-  readByLearner: boolean;
-  createdAt: string;
-}
 
 export const courseApi = {
   /** GET /courses */
@@ -549,10 +534,6 @@ export const courseApi = {
   getProgress(id: string) {
     return apiFetch<CourseProgress>(`/courses/${id}/progress`);
   },
-  /** GET /courses/:id/lessons/:lessonId/questions */
-  getQuestions(id: string, lessonId: string) {
-    return apiFetch<Question[]>(`/courses/${id}/lessons/${lessonId}/questions`);
-  },
   /** POST /courses/:id/lessons/:lessonId/complete  [requires auth] */
   markComplete(id: string, lessonId: string) {
     return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/complete`, { method: "POST" });
@@ -561,65 +542,8 @@ export const courseApi = {
   unmarkComplete(id: string, lessonId: string) {
     return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/complete`, { method: "DELETE" });
   },
-  /** GET /courses/:id/lessons/:lessonId/submissions/me  [requires auth] */
-  getMySubmission(id: string, lessonId: string) {
-    return apiFetch<Submission | null>(`/courses/${id}/lessons/${lessonId}/submissions/me`);
-  },
-  /** POST /courses/:id/lessons/:lessonId/submissions  [requires auth] */
-  submitAnswers(id: string, lessonId: string, responses: { questionId: string; userResponse: string }[]) {
-    return apiFetch<Submission>(`/courses/${id}/lessons/${lessonId}/submissions`, {
-      method: "POST",
-      body: JSON.stringify({ responses }),
-    });
-  },
 };
 
-export interface MySubmissionItem {
-  _id: string;
-  courseId: string;
-  courseTitle: string;
-  courseImage: string | null;
-  lessonId: string;
-  lessonTitle: string;
-  lessonType: string;
-  responses: { questionId: string; userResponse: string }[];
-  createdAt: string;
-}
-
-export interface LearnerSubmissionDetail {
-  _id: string;
-  courseId: string;
-  courseTitle: string;
-  lessonId: string;
-  lessonTitle: string;
-  lessonType: string;
-  responses: { questionId: string; userResponse: string }[];
-  createdAt: string;
-}
-
-export const submissionRemarksApi = {
-  /** GET /courses/submissions/mine  [requires auth] */
-  getMine() {
-    return apiFetch<MySubmissionItem[]>("/courses/submissions/mine");
-  },
-  /** GET /courses/submissions/:submissionId  [requires auth] */
-  getDetail(submissionId: string) {
-    return apiFetch<{ submission: LearnerSubmissionDetail; remarks: Remark[] }>(
-      `/courses/submissions/${submissionId}`,
-    );
-  },
-  /** GET /courses/submissions/:submissionId/remarks  [requires auth] */
-  getRemarks(submissionId: string) {
-    return apiFetch<Remark[]>(`/courses/submissions/${submissionId}/remarks`);
-  },
-  /** POST /courses/submissions/:submissionId/replies  [requires auth] */
-  addReply(submissionId: string, content: string) {
-    return apiFetch<Remark>(`/courses/submissions/${submissionId}/replies`, {
-      method: "POST",
-      body: JSON.stringify({ content }),
-    });
-  },
-};
 
 export const courseVideoApi = {
   /** GET /course-videos/:id */

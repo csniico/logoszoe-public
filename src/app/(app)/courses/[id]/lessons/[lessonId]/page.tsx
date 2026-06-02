@@ -4,13 +4,13 @@ import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  courseApi, courseVideoApi, submissionRemarksApi,
-  CourseVideo, Course, Lesson, Question, Submission, CourseProgress, Remark,
+  courseApi, courseVideoApi,
+  CourseVideo, Course, Lesson, CourseProgress,
 } from "@/lib/api";
 import {
-  BookOpen, CheckCircle2, Circle, Clock,
-  ExternalLink, FileText, Link2, MessageCircle, Mic2, Pause, Play,
-  PlayCircle, ChevronRight, PartyPopper,
+  BookOpen, CheckCircle2, ChevronDown, Circle, Clock,
+  FileText, Mic2, Pause, Play,
+  ChevronRight, PartyPopper,
   RotateCcw, RotateCw, Volume2, VolumeX,
 } from "lucide-react";
 
@@ -34,19 +34,6 @@ function vimeoId(url: string) {
   return m?.[1] ?? null;
 }
 
-const TYPE_ICON: Record<string, React.ElementType> = {
-  text: FileText, document: FileText, video: PlayCircle, audio: Mic2, link: Link2,
-};
-const TYPE_LABEL: Record<string, string> = {
-  text: "Reading", document: "Document", video: "Video", audio: "Audio", link: "Link",
-};
-const TYPE_COLOR: Record<string, string> = {
-  text:     "bg-blue-50 text-blue-600",
-  document: "bg-primary-50 text-primary-700",
-  video:    "bg-rose-50 text-rose-600",
-  audio:    "bg-gold-50 text-gold-700",
-  link:     "bg-amber-50 text-amber-600",
-};
 
 // ── Content renderers ─────────────────────────────────────────────────────────
 
@@ -342,74 +329,6 @@ function AudioContent({ url, title }: { url: string; title: string }) {
   );
 }
 
-function DocumentContent({ html }: { html: string }) {
-  return (
-    <div
-      className="prose prose-sm prose-green max-w-none text-gray-700 leading-relaxed"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
-function LinkContent({ url }: { url: string }) {
-  // Render YouTube/Vimeo as embed even when type=link
-  const ytId = youtubeId(url);
-  if (ytId) {
-    return (
-      <div className="aspect-video rounded-xl overflow-hidden bg-black">
-        <iframe
-          src={`https://www.youtube.com/embed/${ytId}`}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-
-  const vId = vimeoId(url);
-  if (vId) {
-    return (
-      <div className="aspect-video rounded-xl overflow-hidden bg-black">
-        <iframe
-          src={`https://player.vimeo.com/video/${vId}`}
-          className="w-full h-full"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl border border-amber-100 bg-amber-50 p-5 flex items-start gap-4">
-      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <Link2 size={18} className="text-amber-600" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-gray-800 mb-1">External resource</p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-amber-700 underline underline-offset-2 break-all hover:text-amber-900"
-        >
-          {url}
-        </a>
-        <div className="mt-3">
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 transition-colors"
-          >
-            Open link <ExternalLink size={11} />
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function TextContent({ html }: { html: string }) {
   return (
@@ -420,115 +339,31 @@ function TextContent({ html }: { html: string }) {
   );
 }
 
-// ── Questions section ─────────────────────────────────────────────────────────
+// ── Study guide collapsible section ──────────────────────────────────────────
 
-function QuestionsSection({
-  courseId,
-  lessonId,
-  questions,
-  onSubmitted,
-}: {
-  courseId: string;
-  lessonId: string;
-  questions: Question[];
-  onSubmitted: (sub: Submission) => void;
-}) {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const allAnswered = questions.every((q) => (answers[q._id] ?? "").trim().length > 0);
-
-  async function handleSubmit() {
-    if (!allAnswered || submitting) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const responses = questions.map((q) => ({
-        questionId: q._id,
-        userResponse: answers[q._id] ?? "",
-      }));
-      const sub = await courseApi.submitAnswers(courseId, lessonId, responses);
-      setSubmitted(true);
-      onSubmitted(sub);
-    } catch {
-      setError("Failed to submit. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (submitted) {
-    return (
-      <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-4 flex items-center gap-3">
-        <CheckCircle2 size={18} className="text-gray-900 flex-shrink-0" />
-        <p className="text-sm text-gray-900 font-medium">Answers submitted — you can now mark this lesson as complete.</p>
-      </div>
-    );
-  }
-
+function StudySection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="space-y-6">
-      <h3 className="font-semibold text-gray-900">Questions</h3>
-
-      {questions.map((q, idx) => (
-        <div key={q._id} className="space-y-3">
-          <p className="text-sm font-medium text-gray-800">
-            <span className="text-gray-400 mr-2">{idx + 1}.</span>
-            {q.text}
-          </p>
-
-          {q.type === "multiple_choice" && q.options.length > 0 ? (
-            <div className="space-y-2">
-              {q.options.map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    answers[q._id] === opt.value
-                      ? "border-gray-500 bg-gray-100"
-                      : "border-gray-100 hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q-${q._id}`}
-                    value={opt.value}
-                    checked={answers[q._id] === opt.value}
-                    onChange={() => setAnswers((a) => ({ ...a, [q._id]: opt.value }))}
-                    className="accent-gray-900"
-                  />
-                  <span className="text-sm text-gray-700">
-                    <span className="font-semibold text-gray-400 mr-1.5">{opt.label}.</span>
-                    {opt.value}
-                  </span>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <textarea
-              value={answers[q._id] ?? ""}
-              onChange={(e) => setAnswers((a) => ({ ...a, [q._id]: e.target.value }))}
-              rows={3}
-              placeholder="Your answer…"
-              className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent resize-none placeholder:text-gray-300"
-            />
-          )}
-        </div>
-      ))}
-
-      {error && <p className="text-xs text-red-500">{error}</p>}
-
+    <div className="border border-gray-100 rounded-xl overflow-hidden">
       <button
-        onClick={handleSubmit}
-        disabled={!allAnswered || submitting}
-        className="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 bg-white hover:bg-gray-50 transition-colors text-left"
       >
-        {submitting ? "Submitting…" : "Submit answers"}
+        <span className="text-sm font-semibold text-gray-800">{title}</span>
+        <ChevronDown
+          size={15}
+          className={`text-gray-400 transition-transform duration-200 flex-shrink-0 ${open ? "rotate-180" : ""}`}
+        />
       </button>
+      {open && (
+        <div className="px-5 pb-5 pt-1 bg-white border-t border-gray-50 text-sm text-gray-600 leading-relaxed space-y-2">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
@@ -597,81 +432,6 @@ function LessonSidebar({
   );
 }
 
-// ── Submitted answers view ────────────────────────────────────────────────────
-
-function SubmissionView({
-  questions,
-  submission,
-}: {
-  questions: Question[];
-  submission: Submission;
-}) {
-  const responseMap = Object.fromEntries(
-    submission.responses.map((r) => [r.questionId, r.userResponse]),
-  );
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-2">
-        <h3 className="font-semibold text-gray-900">Questions</h3>
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-900 bg-gray-100 px-2 py-0.5 rounded-full">
-          <CheckCircle2 size={11} /> Submitted
-        </span>
-      </div>
-
-      {questions.map((q, idx) => {
-        const userAnswer = responseMap[q._id] ?? "—";
-        const isCorrect  = q.type === "multiple_choice" && q.correctOption
-          ? userAnswer === q.correctOption
-          : null;
-
-        return (
-          <div key={q._id} className="space-y-2.5">
-            <p className="text-sm font-medium text-gray-800">
-              <span className="text-gray-400 mr-2">{idx + 1}.</span>
-              {q.text}
-            </p>
-
-            {q.type === "multiple_choice" ? (
-              <div className="space-y-1.5">
-                {q.options.map((opt) => {
-                  const selected = userAnswer === opt.value;
-                  const correct  = q.correctOption === opt.value;
-                  return (
-                    <div
-                      key={opt.value}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm ${
-                        selected && correct  ? "border-gray-400 bg-gray-100 text-gray-900" :
-                        selected && !correct ? "border-red-200 bg-red-50 text-red-700" :
-                        correct              ? "border-gray-200 bg-gray-100/40 text-gray-800" :
-                        "border-gray-100 text-gray-400"
-                      }`}
-                    >
-                      <span className="font-semibold text-xs w-4 flex-shrink-0">
-                        {opt.label}.
-                      </span>
-                      <span className="flex-1">{opt.value}</span>
-                      {selected && correct  && <CheckCircle2 size={14} className="text-gray-700 flex-shrink-0" />}
-                      {selected && !correct && <Circle size={14} className="text-red-400 flex-shrink-0" />}
-                      {!selected && correct && <CheckCircle2 size={14} className="text-gray-400 flex-shrink-0" />}
-                    </div>
-                  );
-                })}
-                <p className={`text-xs mt-1 ${isCorrect ? "text-gray-900" : "text-red-500"}`}>
-                  {isCorrect ? "Correct ✓" : `Incorrect — correct answer: ${q.correctOption}`}
-                </p>
-              </div>
-            ) : (
-              <div className="px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{userAnswer}</p>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 // ── Next-lesson dialog ────────────────────────────────────────────────────────
 
@@ -740,155 +500,6 @@ function NextLessonDialog({
   );
 }
 
-// ── Feedback thread ───────────────────────────────────────────────────────────
-
-function FeedbackThread({ submissionId }: { submissionId: string }) {
-  const [remarks, setRemarks]           = useState<Remark[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [replyContent, setReplyContent] = useState("");
-  const [replying, setReplying]         = useState(false);
-  const [replyError, setReplyError]     = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    submissionRemarksApi
-      .getRemarks(submissionId)
-      .then(setRemarks)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [submissionId]);
-
-  // Scroll to the newest message whenever the list grows
-  useEffect(() => {
-    if (!loading) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, [remarks.length, loading]);
-
-  // Learner can reply when there's at least one admin remark AND the last
-  // remark is not already from the learner (back-and-forth cadence).
-  const hasAdminRemark = remarks.some((r) => r.authorRole === "admin");
-  const lastRemark     = remarks[remarks.length - 1];
-  const canReply       = hasAdminRemark && lastRemark?.authorRole !== "learner";
-
-  async function handleReply() {
-    const content = replyContent.trim();
-    if (!content || replying) return;
-    setReplying(true);
-    setReplyError(null);
-    try {
-      const remark = await submissionRemarksApi.addReply(submissionId, content);
-      setRemarks((prev) => [...prev, remark]);
-      setReplyContent("");
-    } catch {
-      setReplyError("Failed to send reply. Please try again.");
-    } finally {
-      setReplying(false);
-    }
-  }
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <MessageCircle size={15} className="text-gray-400" />
-        <h3 className="font-semibold text-gray-900 text-sm">Feedback</h3>
-        {remarks.length > 0 && (
-          <span className="ml-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-            {remarks.length}
-          </span>
-        )}
-      </div>
-
-      {/* Thread body */}
-      {loading ? (
-        <div className="space-y-3 animate-pulse">
-          <div className="flex justify-start">
-            <div className="h-16 w-56 bg-gray-100 rounded-2xl rounded-tl-sm" />
-          </div>
-          <div className="flex justify-end">
-            <div className="h-12 w-44 bg-gray-100 rounded-2xl rounded-tr-sm" />
-          </div>
-        </div>
-      ) : remarks.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-8 text-gray-300">
-          <MessageCircle size={28} className="opacity-40" />
-          <p className="text-sm">No feedback yet — check back later.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {remarks.map((r) => (
-            <div
-              key={r._id}
-              className={`flex ${r.authorRole === "admin" ? "justify-start" : "justify-end"}`}
-            >
-              <div
-                className={`max-w-[82%] rounded-2xl px-4 py-3 space-y-1.5 ${
-                  r.authorRole === "admin"
-                    ? "bg-primary-50 border border-primary-100 rounded-tl-sm"
-                    : "bg-gray-100 border border-gray-200 rounded-tr-sm"
-                }`}
-              >
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${
-                  r.authorRole === "admin" ? "text-primary-700" : "text-gray-900"
-                }`}>
-                  {r.authorName}
-                </p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {r.content}
-                </p>
-                <p className="text-[10px] text-gray-400">
-                  {new Date(r.createdAt).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-            </div>
-          ))}
-          <div ref={bottomRef} />
-        </div>
-      )}
-
-      {/* Reply box — only visible when admin has responded and it's the learner's turn */}
-      {!loading && canReply && (
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          <textarea
-            value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
-            rows={3}
-            placeholder="Write a reply…"
-            disabled={replying}
-            className="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent resize-none placeholder:text-gray-300 disabled:opacity-50"
-          />
-          {replyError && <p className="text-xs text-red-500">{replyError}</p>}
-          <div className="flex justify-end">
-            <button
-              onClick={handleReply}
-              disabled={!replyContent.trim() || replying}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {replying
-                ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                : <MessageCircle size={13} />
-              }
-              {replying ? "Sending…" : "Send reply"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Waiting hint — shown when learner has replied and is awaiting admin response */}
-      {!loading && remarks.length > 0 && lastRemark?.authorRole === "learner" && (
-        <p className="text-xs text-center text-gray-400 pt-1">
-          Waiting for a response from our team…
-        </p>
-      )}
-    </div>
-  );
-}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -902,50 +513,33 @@ export default function LessonPage({
   const [course, setCourse] = useState<Course | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [allLessons, setAllLessons] = useState<Lesson[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [canMarkComplete, setCanMarkComplete] = useState(false);
+  const [studyAnswers, setStudyAnswers] = useState<Record<number, string>>({});
+  const [reflectionAnswers, setReflectionAnswers] = useState<Record<number, string>>({});
   const [completing, setCompleting] = useState(false);
   const [showNextDialog, setShowNextDialog] = useState(false);
-  const [submission, setSubmission] = useState<Submission | null>(null);
-
-  const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     Promise.all([
       courseApi.getOne(courseId),
       courseApi.getLesson(courseId, lessonId),
       courseApi.getLessons(courseId),
-      courseApi.getQuestions(courseId, lessonId),
       courseApi.getProgress(courseId).catch(() => null),
-      courseApi.getMySubmission(courseId, lessonId).catch(() => null),
     ])
-      .then(([c, l, ls, qs, p, sub]) => {
+      .then(([c, l, ls, p]) => {
         setCourse(c);
         setLesson(l);
         setAllLessons(ls);
-        setQuestions(qs);
         setProgress(p);
-        setSubmission(sub);
-        // Can mark complete if no questions, or already has a submission
-        if (qs.length === 0 || sub) setCanMarkComplete(true);
       })
       .catch(() => setError("Lesson not found."))
       .finally(() => setLoading(false));
   }, [courseId, lessonId]);
 
-  // Auto-scroll to feedback when ?feedback=open is in the URL
-  useEffect(() => {
-    if (loading) return;
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("feedback") === "open") {
-      feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [loading]);
-
-  const completedIds = new Set(progress?.completedLessonIds ?? []);
+const completedIds = new Set(progress?.completedLessonIds ?? []);
   const isAlreadyComplete = completedIds.has(lessonId);
 
   const currentIndex = allLessons.findIndex((l) => l._id === lessonId);
@@ -995,7 +589,16 @@ export default function LessonPage({
     );
   }
 
-  const TypeIcon = TYPE_ICON[lesson.type] ?? BookOpen;
+  // ── Derived: can mark complete ──────────────────────────────────────────────
+  const studyQs      = lesson.studyQuestions      ?? [];
+  const reflectionQs = lesson.reflectionQuestions ?? [];
+
+  const allStudyAnswered      = studyQs.every((_, i)      => (studyAnswers[i]      ?? "").trim().length > 0);
+  const allReflectionAnswered = reflectionQs.every((_, i) => (reflectionAnswers[i] ?? "").trim().length > 0);
+
+  const canMarkComplete =
+    (studyQs.length === 0      || allStudyAnswered) &&
+    (reflectionQs.length === 0 || allReflectionAnswered);
 
   return (
     <div>
@@ -1027,10 +630,6 @@ export default function LessonPage({
           {/* Lesson header */}
           <div>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${TYPE_COLOR[lesson.type] ?? "bg-gray-100 text-gray-500"}`}>
-                <TypeIcon size={11} />
-                {TYPE_LABEL[lesson.type]}
-              </span>
               {formatDuration(lesson.durationSec) && (
                 <span className="inline-flex items-center gap-1 text-xs text-gray-400">
                   <Clock size={11} /> {formatDuration(lesson.durationSec)}
@@ -1047,58 +646,103 @@ export default function LessonPage({
 
           {/* Content — transparent, no card border */}
           <div className="py-1">
-            {lesson.type === "video"    && <VideoContent videoId={lesson.content} />}
-            {lesson.type === "audio"    && <AudioContent url={lesson.content} title={lesson.title} />}
-            {lesson.type === "document" && <DocumentContent html={lesson.content} />}
-            {lesson.type === "link"     && <LinkContent url={lesson.content} />}
-            {lesson.type === "text"     && <TextContent html={lesson.content} />}
+            {lesson.type === "video" && <VideoContent videoId={lesson.content} />}
+            {lesson.type === "audio" && <AudioContent url={lesson.content} title={lesson.title} />}
+            {lesson.type === "text"  && <TextContent html={lesson.content} />}
           </div>
 
-          {/* Questions — form while pending, read-only view once submitted */}
-          {questions.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              {submission ? (
-                <SubmissionView questions={questions} submission={submission} />
-              ) : (
-                <QuestionsSection
-                  courseId={courseId}
-                  lessonId={lessonId}
-                  questions={questions}
-                  onSubmitted={(sub) => {
-                    setSubmission(sub);
-                    setCanMarkComplete(true);
-                  }}
-                />
+          {/* Study guide sections */}
+          {(studyQs.length > 0 ||
+            reflectionQs.length > 0 ||
+            lesson.prayer || lesson.furtherStudy) && (
+            <div className="space-y-2">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Study Guide</h2>
+
+              {studyQs.length > 0 && (
+                <StudySection title={`Study Questions (${studyQs.length})`} defaultOpen>
+                  <div className="space-y-5 pt-1">
+                    {studyQs.map((q, i) => (
+                      <div key={i} className="space-y-2">
+                        <p className="text-sm font-medium text-gray-800">
+                          <span className="text-gray-400 mr-1.5">{i + 1}.</span>{q.text}
+                        </p>
+                        <textarea
+                          value={studyAnswers[i] ?? ""}
+                          onChange={(e) => setStudyAnswers((a) => ({ ...a, [i]: e.target.value }))}
+                          rows={3}
+                          placeholder="Your answer…"
+                          className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent resize-none placeholder:text-gray-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </StudySection>
+              )}
+
+              {reflectionQs.length > 0 && (
+                <StudySection title={`Reflection Questions (${reflectionQs.length})`} defaultOpen>
+                  <div className="space-y-5 pt-1">
+                    {reflectionQs.map((q, i) => (
+                      <div key={i} className="space-y-2">
+                        <p className="text-sm font-medium text-gray-800">
+                          <span className="text-gray-400 mr-1.5">{i + 1}.</span>{q.text}
+                        </p>
+                        <textarea
+                          value={reflectionAnswers[i] ?? ""}
+                          onChange={(e) => setReflectionAnswers((a) => ({ ...a, [i]: e.target.value }))}
+                          rows={3}
+                          placeholder="Your answer…"
+                          className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent resize-none placeholder:text-gray-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </StudySection>
+              )}
+
+              {lesson.prayer && (
+                <StudySection title="Prayer">
+                  <p className="whitespace-pre-wrap italic text-gray-500">{lesson.prayer}</p>
+                </StudySection>
+              )}
+
+              {lesson.furtherStudy && (
+                <StudySection title="Further Study">
+                  <div
+                    className="prose prose-sm prose-green max-w-none leading-relaxed [&_a]:text-primary-600 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary-800"
+                    dangerouslySetInnerHTML={{ __html: lesson.furtherStudy }}
+                  />
+                </StudySection>
               )}
             </div>
           )}
 
-          {/* Feedback thread — visible once the lesson is complete and has a submission */}
-          {isAlreadyComplete && submission && (
-            <div ref={feedbackRef}>
-              <FeedbackThread submissionId={submission._id} />
-            </div>
-          )}
-
           {/* Mark complete — static badge once done, actionable button while pending */}
-          <div className="pt-2 pb-8">
+          <div className="pt-2 pb-8 space-y-2">
             {isAlreadyComplete ? (
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-800 border border-gray-300">
                 <CheckCircle2 size={16} />
                 Lesson completed
               </div>
             ) : (
-              <button
-                onClick={handleMarkComplete}
-                disabled={!canMarkComplete || completing}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {completing
-                  ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  : <Circle size={16} />
-                }
-                Mark as completed
-              </button>
+              <>
+                <button
+                  onClick={handleMarkComplete}
+                  disabled={!canMarkComplete || completing}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {completing
+                    ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    : <Circle size={16} />
+                  }
+                  Mark as completed
+                </button>
+                {!canMarkComplete && (
+                  <p className="text-xs text-gray-400">
+                    Answer all study guide questions above to continue.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
