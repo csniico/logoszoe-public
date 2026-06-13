@@ -10,7 +10,7 @@ import {
 import {
   BookOpen, CheckCircle2, ChevronDown, Circle, Clock,
   FileText, Mic2, Pause, Play,
-  ChevronRight, PartyPopper,
+  ChevronRight,
   RotateCcw, RotateCw, Volume2, VolumeX,
 } from "lucide-react";
 
@@ -433,68 +433,101 @@ function LessonSidebar({
 }
 
 
-// ── Next-lesson dialog ────────────────────────────────────────────────────────
+// ── Countdown dialog ─────────────────────────────────────────────────────────
 
-function NextLessonDialog({
+const COUNTDOWN_SECS = 5;
+
+function CountdownDialog({
   nextLesson,
   courseId,
-  onDismiss,
+  onCancel,
 }: {
-  nextLesson: Lesson;
+  nextLesson: Lesson | null;
   courseId: string;
-  onDismiss: () => void;
+  onCancel: () => void;
 }) {
   const router = useRouter();
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const [elapsed, setElapsed] = useState(0); // ms since mount
 
-  // Close on backdrop click
-  function handleOverlayClick(e: React.MouseEvent) {
-    if (e.target === overlayRef.current) onDismiss();
-  }
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => {
+      const e = Date.now() - start;
+      setElapsed(e);
+      if (e >= COUNTDOWN_SECS * 1000) {
+        clearInterval(id);
+        if (nextLesson) {
+          router.push(`/courses/${courseId}/lessons/${nextLesson._id}`);
+        } else {
+          router.push(`/courses/${courseId}`);
+        }
+      }
+    }, 50);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function handleNext() {
-    onDismiss();
-    router.push(`/courses/${courseId}/lessons/${nextLesson._id}`);
-  }
+  const fraction   = Math.min(elapsed / (COUNTDOWN_SECS * 1000), 1);
+  const secondsLeft = Math.max(0, Math.ceil(COUNTDOWN_SECS - elapsed / 1000));
+
+  // SVG ring
+  const r    = 30;
+  const circ = 2 * Math.PI * r;
+  const dashOffset = circ * fraction; // 0 = full ring → circ = empty
 
   return (
-    <div
-      ref={overlayRef}
-      onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
-    >
-      <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in-95 duration-150">
-        {/* Icon */}
-        <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center">
-          <PartyPopper size={26} className="text-gray-900" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full px-8 py-8 flex flex-col items-center text-center gap-5 animate-in fade-in zoom-in-95 duration-200">
+
+        {/* Circular countdown ring */}
+        <div className="relative w-20 h-20 flex-shrink-0">
+          <svg width="80" height="80" className="-rotate-90" aria-hidden="true">
+            {/* Track */}
+            <circle cx="40" cy="40" r={r} fill="none" stroke="#f3f4f6" strokeWidth="5" />
+            {/* Depleting arc */}
+            <circle
+              cx="40" cy="40" r={r}
+              fill="none"
+              stroke="#111827"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={dashOffset}
+            />
+          </svg>
+          {/* Number centred in the ring */}
+          <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-gray-900 tabular-nums">
+            {secondsLeft}
+          </span>
         </div>
 
-        {/* Copy */}
-        <div>
-          <h2 className="text-base font-bold text-gray-900 mb-1">Lesson complete!</h2>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Ready to continue to the next lesson?
-          </p>
-          <p className="text-xs font-medium text-gray-700 mt-2 line-clamp-2">
-            {nextLesson.title}
-          </p>
+        {/* Heading */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-center gap-1.5">
+            <CheckCircle2 size={17} className="text-gray-700 flex-shrink-0" />
+            <h2 className="text-base font-bold text-gray-900">Lesson complete!</h2>
+          </div>
+          {nextLesson ? (
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Up next:{" "}
+              <span className="font-medium text-gray-700 line-clamp-2">{nextLesson.title}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 leading-relaxed">
+              You've finished the course!<br />
+              Heading back to the course page…
+            </p>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onDismiss}
-            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Stay here
-          </button>
-          <button
-            onClick={handleNext}
-            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-          >
-            Next lesson
-          </button>
-        </div>
+        {/* Cancel */}
+        <button
+          onClick={onCancel}
+          className="text-sm text-gray-400 hover:text-gray-700 transition-colors underline underline-offset-2"
+        >
+          Cancel
+        </button>
+
       </div>
     </div>
   );
@@ -520,7 +553,8 @@ export default function LessonPage({
   const [studyAnswers, setStudyAnswers] = useState<Record<number, string>>({});
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<number, string>>({});
   const [completing, setCompleting] = useState(false);
-  const [showNextDialog, setShowNextDialog] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
+  const [showCountdown, setShowCountdown] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -556,7 +590,9 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
         lessonsCompleted: (p?.lessonsCompleted ?? 0) + 1,
         completedLessonIds: [...(p?.completedLessonIds ?? []), lessonId],
       }));
-      if (nextLesson) setShowNextDialog(true);
+      // Brief "success flash" on the button before the countdown opens
+      setJustCompleted(true);
+      setTimeout(() => setShowCountdown(true), 650);
     } catch {
       // silent
     } finally {
@@ -602,12 +638,12 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
 
   return (
     <div>
-      {/* Next-lesson dialog */}
-      {showNextDialog && nextLesson && (
-        <NextLessonDialog
+      {/* Countdown dialog — shown after marking complete (next lesson or back to course) */}
+      {showCountdown && (
+        <CountdownDialog
           nextLesson={nextLesson}
           courseId={courseId}
-          onDismiss={() => setShowNextDialog(false)}
+          onCancel={() => { setShowCountdown(false); setJustCompleted(false); }}
         />
       )}
 
@@ -717,32 +753,43 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
             </div>
           )}
 
-          {/* Mark complete — static badge once done, actionable button while pending */}
+          {/* Mark complete */}
           <div className="pt-2 pb-8 space-y-2">
-            {isAlreadyComplete ? (
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-800 border border-gray-300">
-                <CheckCircle2 size={16} />
-                Lesson completed
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={handleMarkComplete}
-                  disabled={!canMarkComplete || completing}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {completing
-                    ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    : <Circle size={16} />
-                  }
-                  Mark as completed
-                </button>
-                {!canMarkComplete && (
-                  <p className="text-xs text-gray-400">
-                    Answer all study guide questions above to continue.
-                  </p>
-                )}
-              </>
+            <button
+              onClick={handleMarkComplete}
+              disabled={!canMarkComplete || completing || isAlreadyComplete}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-500 ${
+                justCompleted || isAlreadyComplete
+                  ? "bg-gray-100 text-gray-700 border border-gray-200 cursor-default shadow-none"
+                  : "bg-gray-900 text-white hover:bg-gray-800 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+              }`}
+            >
+              {/* Icon — animates circle → spinner → checkmark */}
+              {completing ? (
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (justCompleted || isAlreadyComplete) ? (
+                <CheckCircle2
+                  size={16}
+                  className={`transition-all duration-300 ${justCompleted ? "text-gray-600 scale-110" : "text-gray-600"}`}
+                />
+              ) : (
+                <Circle size={16} />
+              )}
+
+              {/* Label */}
+              <span className="transition-all duration-300">
+                {completing
+                  ? "Marking…"
+                  : (justCompleted || isAlreadyComplete)
+                    ? "Lesson completed"
+                    : "Mark as completed"}
+              </span>
+            </button>
+
+            {!canMarkComplete && !isAlreadyComplete && !completing && (
+              <p className="text-xs text-gray-400">
+                Answer all study guide questions above to continue.
+              </p>
             )}
           </div>
         </div>
