@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { User, AuthResponse, userApi } from "@/lib/api";
+import { User, AuthResponse, ApiError, userApi } from "@/lib/api";
 import { setTokens, clearTokens, getToken, saveUser, loadUser } from "@/lib/tokens";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -46,10 +46,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = getToken();
     if (!token) { setLoading(false); return; }
 
-    // Validate the stored token is still good
+    // Validate the stored token is still good.
+    // Only clear tokens on an explicit 401 — a network error (ECONNREFUSED,
+    // timeout, etc.) must NOT sign the user out; keep the cached user instead.
     userApi.me()
       .then((u) => { setUser(u); saveUser(u); })
-      .catch(() => { clearTokens(); setUser(null); })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) {
+          clearTokens();
+          setUser(null);
+        }
+        // Network errors: stay signed in with the cached user already set above
+      })
       .finally(() => setLoading(false));
   }, []);
 
