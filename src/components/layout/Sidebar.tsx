@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Heart,
   HandHeart,
+  ClipboardList,
   ShoppingBag,
   PlayCircle,
   LogOut,
@@ -50,6 +51,7 @@ const topItems = [
 
 const bottomItems = [
   { label: "Bookmarks",   href: "/bookmarks",    icon: Bookmark },
+  { label: "Submissions", href: "/submissions",  icon: ClipboardList },
   { label: "Community",   href: "/community",    icon: MessageSquare },
   { label: "Prayer",      href: "/prayer",       icon: Heart },
   { label: "Donation",    href: "/donations",    icon: HandHeart },

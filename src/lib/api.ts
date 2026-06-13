@@ -610,6 +610,71 @@ export const donationApi = {
   },
 };
 
+// ── Submissions (learner-facing) ─────────────────────────────────────────────
+
+export interface SubmissionResponseItem {
+  questionId: string;
+  questionText: string;
+  questionType: string; // "study" | "reflection"
+  userResponse: string;
+}
+
+/** Row in GET /courses/submissions/mine */
+export interface MySubmissionItem {
+  _id: string;
+  courseId: string;
+  courseTitle: string;
+  courseImage: string | null;
+  lessonId: string;
+  lessonTitle: string;
+  lessonType: string;
+  responses: SubmissionResponseItem[];
+  createdAt: string;
+}
+
+export interface SubmissionRemark {
+  _id: string;
+  submissionId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: "admin" | "learner";
+  content: string;
+  readByLearner: boolean;
+  createdAt: string;
+}
+
+export interface LearnerSubmissionDetail {
+  submission: {
+    _id: string;
+    courseId: string;
+    courseTitle: string;
+    lessonId: string;
+    lessonTitle: string;
+    lessonType: string;
+    responses: SubmissionResponseItem[];
+    createdAt: string;
+  };
+  remarks: SubmissionRemark[];
+}
+
+export const submissionsApi = {
+  /** GET /courses/submissions/mine */
+  getMine() {
+    return apiFetch<MySubmissionItem[]>("/courses/submissions/mine");
+  },
+  /** GET /courses/submissions/:submissionId — detail + remarks thread */
+  getDetail(submissionId: string) {
+    return apiFetch<LearnerSubmissionDetail>(`/courses/submissions/${submissionId}`);
+  },
+  /** POST /courses/submissions/:submissionId/replies — learner reply */
+  reply(submissionId: string, content: string) {
+    return apiFetch<SubmissionRemark>(`/courses/submissions/${submissionId}/replies`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    });
+  },
+};
+
 // ── Prayer types + endpoints ─────────────────────────────────────────────────
 
 export interface Prayer {
