@@ -217,7 +217,7 @@ function HeroCard({ devotional, loading }: { devotional: Devotional | null; load
         {/* Badge */}
         <div>
           <span className="inline-block bg-gold-400 text-gold-900 text-[11px] font-bold px-3 py-1 rounded-full tracking-wide">
-            Daily Bread
+            Sceptre of Power
           </span>
         </div>
 
