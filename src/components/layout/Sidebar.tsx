@@ -13,6 +13,7 @@ import {
   Mic2,
   MessageSquare,
   Heart,
+  HandHeart,
   ShoppingBag,
   PlayCircle,
   LogOut,
@@ -51,6 +52,7 @@ const bottomItems = [
   { label: "Bookmarks",   href: "/bookmarks",    icon: Bookmark },
   { label: "Community",   href: "/community",    icon: MessageSquare },
   { label: "Prayer",      href: "/prayer",       icon: Heart },
+  { label: "Donation",    href: "/donations",    icon: HandHeart },
   { label: "Shop",        href: "/shop",         icon: ShoppingBag },
   { label: "Bible",       href: "/bible",        icon: BookOpen },
 ];

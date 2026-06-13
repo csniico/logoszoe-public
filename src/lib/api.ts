@@ -568,6 +568,48 @@ export const courseVideoApi = {
   },
 };
 
+// ── Donations ────────────────────────────────────────────────────────────────
+
+export type DonationCategory = "partnership" | "oneTime";
+export type DonationPlatform = "ios" | "android" | "web" | "unknown";
+
+export interface Donation {
+  _id: string;
+  userId: string;
+  transactionId: string;
+  productIdentifier: string;
+  category: DonationCategory;
+  platform: DonationPlatform;
+  purchaseDate: string;
+  amount?: number;   // smallest currency unit (cents)
+  currency?: string;
+  createdAt: string;
+}
+
+export interface CreateDonationPayload {
+  transactionId: string;
+  productIdentifier: string;
+  category: DonationCategory;
+  platform?: DonationPlatform;
+  purchaseDate?: string;
+  amount?: number;
+  currency?: string;
+}
+
+export const donationApi = {
+  /** GET /donations — the current user's own donation history (newest first). */
+  getMine() {
+    return apiFetch<Donation[]>("/donations");
+  },
+  /** POST /donations — log a completed RevenueCat web purchase. */
+  log(payload: CreateDonationPayload) {
+    return apiFetch<Donation>("/donations", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
 // ── Prayer types + endpoints ─────────────────────────────────────────────────
 
 export interface Prayer {
