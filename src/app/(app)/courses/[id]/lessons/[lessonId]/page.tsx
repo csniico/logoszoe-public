@@ -555,6 +555,8 @@ export default function LessonPage({
   const [completing, setCompleting] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -583,7 +585,30 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
     if (completing || isAlreadyComplete) return;
     setCompleting(true);
     try {
-      await courseApi.markComplete(courseId, lessonId);
+      // Build response payload from study + reflection answers
+      const responses = [
+        ...studyQs.map((q, i) => ({
+          questionId:   `study-${i}`,
+          questionText: q.text,
+          questionType: "study",
+          userResponse: (studyAnswers[i] ?? "").trim(),
+        })),
+        ...reflectionQs.map((q, i) => ({
+          questionId:   `reflection-${i}`,
+          questionText: q.text,
+          questionType: "reflection",
+          userResponse: (reflectionAnswers[i] ?? "").trim(),
+        })),
+      ];
+
+      // Submit answers and mark complete in parallel
+      await Promise.all([
+        responses.length > 0
+          ? courseApi.submitAnswers(courseId, lessonId, responses)
+          : Promise.resolve(),
+        courseApi.markComplete(courseId, lessonId),
+      ]);
+
       setProgress((p) => ({
         courseId,
         totalLessons: p?.totalLessons ?? allLessons.length,
@@ -597,6 +622,31 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
       // silent
     } finally {
       setCompleting(false);
+    }
+  }
+
+  async function handleReset() {
+    setResetting(true);
+    try {
+      // unmarkComplete is the critical call — must succeed
+      await courseApi.unmarkComplete(courseId, lessonId);
+      // deleteSubmission is best-effort; never let it block the UI reset
+      courseApi.deleteSubmission(courseId, lessonId).catch(() => {});
+      // Update local state immediately
+      setProgress((p) => ({
+        courseId,
+        totalLessons: p?.totalLessons ?? allLessons.length,
+        lessonsCompleted: Math.max(0, (p?.lessonsCompleted ?? 1) - 1),
+        completedLessonIds: (p?.completedLessonIds ?? []).filter((id) => id !== lessonId),
+      }));
+      setJustCompleted(false);
+      setStudyAnswers({});
+      setReflectionAnswers({});
+      setShowResetConfirm(false);
+    } catch {
+      // unmarkComplete failed — stay put so user can retry
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -694,6 +744,21 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
             <div className="space-y-2">
               <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Study Guide</h2>
 
+              {lesson.prayer && (
+                <StudySection title="Prayer" defaultOpen>
+                  <p className="whitespace-pre-wrap italic text-gray-500">{lesson.prayer}</p>
+                </StudySection>
+              )}
+
+              {lesson.furtherStudy && (
+                <StudySection title="Further Study" defaultOpen>
+                  <div
+                    className="prose prose-sm prose-green max-w-none leading-relaxed [&_a]:text-primary-600 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary-800"
+                    dangerouslySetInnerHTML={{ __html: lesson.furtherStudy }}
+                  />
+                </StudySection>
+              )}
+
               {studyQs.length > 0 && (
                 <StudySection title={`Study Questions (${studyQs.length})`} defaultOpen>
                   <div className="space-y-5 pt-1">
@@ -735,26 +800,11 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
                   </div>
                 </StudySection>
               )}
-
-              {lesson.prayer && (
-                <StudySection title="Prayer">
-                  <p className="whitespace-pre-wrap italic text-gray-500">{lesson.prayer}</p>
-                </StudySection>
-              )}
-
-              {lesson.furtherStudy && (
-                <StudySection title="Further Study">
-                  <div
-                    className="prose prose-sm prose-green max-w-none leading-relaxed [&_a]:text-primary-600 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary-800"
-                    dangerouslySetInnerHTML={{ __html: lesson.furtherStudy }}
-                  />
-                </StudySection>
-              )}
             </div>
           )}
 
-          {/* Mark complete */}
-          <div className="pt-2 pb-8 space-y-2">
+          {/* Mark complete / Reset */}
+          <div className="pt-2 pb-8 flex flex-col items-start gap-3">
             <button
               onClick={handleMarkComplete}
               disabled={!canMarkComplete || completing || isAlreadyComplete}
@@ -764,32 +814,67 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
                   : "bg-gray-900 text-white hover:bg-gray-800 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               }`}
             >
-              {/* Icon — animates circle → spinner → checkmark */}
               {completing ? (
                 <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (justCompleted || isAlreadyComplete) ? (
-                <CheckCircle2
-                  size={16}
-                  className={`transition-all duration-300 ${justCompleted ? "text-gray-600 scale-110" : "text-gray-600"}`}
-                />
+                <CheckCircle2 size={16} className="text-gray-600" />
               ) : (
                 <Circle size={16} />
               )}
-
-              {/* Label */}
               <span className="transition-all duration-300">
-                {completing
-                  ? "Marking…"
-                  : (justCompleted || isAlreadyComplete)
-                    ? "Lesson completed"
-                    : "Mark as completed"}
+                {completing ? "Marking…" : (justCompleted || isAlreadyComplete) ? "Lesson completed" : "Mark as completed"}
               </span>
             </button>
 
+            {/* Hint when blocked */}
             {!canMarkComplete && !isAlreadyComplete && !completing && (
               <p className="text-xs text-gray-400">
                 Answer all study guide questions above to continue.
               </p>
+            )}
+
+            {/* Reset link — only once completed */}
+            {isAlreadyComplete && !showResetConfirm && (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <RotateCcw size={12} />
+                Reset progress
+              </button>
+            )}
+
+            {/* Inline warning + confirm */}
+            {isAlreadyComplete && showResetConfirm && (
+              <div className="flex flex-col gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 max-w-sm">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <p className="text-xs text-red-700 leading-relaxed">
+                    This will mark the lesson as incomplete and permanently delete your submitted answers. This cannot be undone.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleReset}
+                    disabled={resetting}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {resetting
+                      ? <><span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> Resetting…</>
+                      : "Yes, reset"}
+                  </button>
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    disabled={resetting}
+                    className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

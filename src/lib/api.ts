@@ -124,7 +124,12 @@ export async function apiFetch<T = unknown>(
     throw new ApiError(res.status, Array.isArray(message) ? message.join(". ") : message);
   }
 
-  return res.json() as Promise<T>;
+  // 204 No Content (and any empty body) — nothing to parse.
+  // Calling res.json() on an empty body throws "Unexpected end of JSON input".
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 // ── Auth endpoints ───────────────────────────────────────────────────────────
@@ -541,6 +546,17 @@ export const courseApi = {
   /** DELETE /courses/:id/lessons/:lessonId/complete  [requires auth] */
   unmarkComplete(id: string, lessonId: string) {
     return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/complete`, { method: "DELETE" });
+  },
+  /** POST /courses/:id/lessons/:lessonId/submissions — save study/reflection answers */
+  submitAnswers(id: string, lessonId: string, responses: { questionId: string; questionText: string; questionType: string; userResponse: string }[]) {
+    return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/submissions`, {
+      method: "POST",
+      body: JSON.stringify({ responses }),
+    });
+  },
+  /** DELETE /courses/:id/lessons/:lessonId/submissions — wipe the learner's submission */
+  deleteSubmission(id: string, lessonId: string) {
+    return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/submissions`, { method: "DELETE" });
   },
 };
 
