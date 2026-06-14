@@ -13,6 +13,7 @@ import {
   ChevronRight,
   RotateCcw, RotateCw, Volume2, VolumeX,
 } from "lucide-react";
+import { CourseVideoPlayer } from "@/components/video/CourseVideoPlayer";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -88,16 +89,7 @@ function VideoContent({ videoId }: { videoId: string }) {
     );
   }
 
-  return (
-    <video
-      controls
-      className="w-full rounded-xl bg-black"
-      src={video.videoUrl}
-      poster={video.thumbnailUrl}
-    >
-      Your browser does not support the video tag.
-    </video>
-  );
+  return <CourseVideoPlayer src={video.videoUrl} poster={video.thumbnailUrl} />;
 }
 
 function AudioContent({ url, title }: { url: string; title: string }) {
