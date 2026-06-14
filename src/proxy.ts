@@ -24,7 +24,7 @@ export default function proxy(request: NextRequest) {
   }
 
   // Check for the auth token cookie (written by tokens.ts on the client after login).
-  // This is a presence check only — real JWT validation happens on the NestJS backend.
+  // This is a presence check only - real JWT validation happens on the NestJS backend.
   const token = request.cookies.get("lz_token")?.value;
   if (!token) {
     const loginUrl = new URL("/auth/login", request.url);

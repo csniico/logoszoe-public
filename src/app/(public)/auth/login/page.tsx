@@ -71,7 +71,7 @@ function LoginContent() {
               type="button"
               className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors mb-6"
               onClick={() => {
-                // TODO: wire Google OAuth — redirect to /auth/sign-in-google-web
+                // TODO: wire Google OAuth - redirect to /auth/sign-in-google-web
                 window.location.href = `/api/auth/sign-in-google-web`;
               }}
             >

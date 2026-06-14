@@ -209,7 +209,7 @@ function ReplyCard({
         )}
       </div>
 
-      {/* Text — clicking navigates into this reply's thread */}
+      {/* Text - clicking navigates into this reply's thread */}
       <button
         type="button"
         onClick={() => router.push(`/community/${post._id}`)}
@@ -239,7 +239,7 @@ function ReplyCard({
           {post.likeCount > 0 && <span>{post.likeCount}</span>}
         </button>
 
-        {/* Reply count — clicking dives into this reply's own thread */}
+        {/* Reply count - clicking dives into this reply's own thread */}
         <Link
           href={`/community/${post._id}`}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-900 transition-colors"
@@ -524,7 +524,7 @@ export default function PostDetailPage({
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Breadcrumb — goes up to parent if this is a reply, else to the feed */}
+      {/* Breadcrumb - goes up to parent if this is a reply, else to the feed */}
       <Link
         href={post.parentId ? `/community/${post.parentId}` : "/community"}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6"

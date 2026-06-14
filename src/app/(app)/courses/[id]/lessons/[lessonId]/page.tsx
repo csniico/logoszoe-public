@@ -197,7 +197,7 @@ function AudioContent({ url, title }: { url: string; title: string }) {
         onEnded={() => setPlaying(false)}
       />
 
-      {/* Hero band — no border, just gradient */}
+      {/* Hero band - no border, just gradient */}
       <div className="bg-gradient-to-br from-primary-500 to-primary-700 rounded-t-2xl px-6 pt-8 pb-12 flex flex-col items-center gap-4">
         <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center">
           <Mic2 size={34} className="text-white" />
@@ -207,7 +207,7 @@ function AudioContent({ url, title }: { url: string; title: string }) {
         </p>
       </div>
 
-      {/* Controls card — the only bordered element */}
+      {/* Controls card - the only bordered element */}
       <div className="-mt-6 mx-4 bg-white rounded-2xl border border-gray-100 shadow-md px-5 py-5 space-y-4">
 
         {/* Seek bar */}
@@ -260,10 +260,10 @@ function AudioContent({ url, title }: { url: string; title: string }) {
             </button>
           </div>
 
-          {/* Volume — far right, with pop-up drawer */}
+          {/* Volume - far right, with pop-up drawer */}
           <div ref={volumeRef} className="relative flex-shrink-0">
 
-            {/* Drawer — slides up from button */}
+            {/* Drawer - slides up from button */}
             {showVolume && (
               <div className="absolute bottom-full right-0 mb-2 bg-white rounded-2xl border border-gray-100 shadow-lg px-3 pt-3 pb-2 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150 z-10">
                 {/* Mute button at top of drawer */}
@@ -274,7 +274,7 @@ function AudioContent({ url, title }: { url: string; title: string }) {
                   {muted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
                 </button>
 
-                {/* Vertical slider — rotated range input */}
+                {/* Vertical slider - rotated range input */}
                 <div className="h-[80px] flex items-center justify-center overflow-visible">
                   <input
                     type="range"
@@ -311,7 +311,7 @@ function AudioContent({ url, title }: { url: string; title: string }) {
         </div>
       </div>
 
-      {/* Transcript — disabled until backend ready */}
+      {/* Transcript - disabled until backend ready */}
       <div className="mx-4 mt-3">
         <button
           disabled
@@ -628,7 +628,7 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
   async function handleReset() {
     setResetting(true);
     try {
-      // unmarkComplete is the critical call — must succeed
+      // unmarkComplete is the critical call - must succeed
       await courseApi.unmarkComplete(courseId, lessonId);
       // deleteSubmission is best-effort; never let it block the UI reset
       courseApi.deleteSubmission(courseId, lessonId).catch(() => {});
@@ -644,7 +644,7 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
       setReflectionAnswers({});
       setShowResetConfirm(false);
     } catch {
-      // unmarkComplete failed — stay put so user can retry
+      // unmarkComplete failed - stay put so user can retry
     } finally {
       setResetting(false);
     }
@@ -688,7 +688,7 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
 
   return (
     <div>
-      {/* Countdown dialog — shown after marking complete (next lesson or back to course) */}
+      {/* Countdown dialog - shown after marking complete (next lesson or back to course) */}
       {showCountdown && (
         <CountdownDialog
           nextLesson={nextLesson}
@@ -730,7 +730,7 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
             <h1 className="text-xl font-bold text-gray-900 leading-snug">{lesson.title}</h1>
           </div>
 
-          {/* Content — transparent, no card border */}
+          {/* Content - transparent, no card border */}
           <div className="py-1">
             {lesson.type === "video" && <VideoContent videoId={lesson.content} />}
             {lesson.type === "audio" && <AudioContent url={lesson.content} title={lesson.title} />}
@@ -833,7 +833,7 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
               </p>
             )}
 
-            {/* Reset link — only once completed */}
+            {/* Reset link - only once completed */}
             {isAlreadyComplete && !showResetConfirm && (
               <button
                 onClick={() => setShowResetConfirm(true)}

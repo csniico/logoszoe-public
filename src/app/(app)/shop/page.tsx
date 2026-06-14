@@ -70,7 +70,7 @@ function ProductCard({ product }: { product: Product }) {
         ) : (
           <ShoppingBag size={40} className="text-gray-300" />
         )}
-        {/* pre-order overlay only — status shown in card body, avoid duplication */}
+        {/* pre-order overlay only - status shown in card body, avoid duplication */}
         {product.status === "pre-order" && (
           <span className="absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
             Pre-order
@@ -177,7 +177,7 @@ export default function ShopPage() {
 
       {/* Filters */}
       <div className="flex flex-col gap-2 mb-6">
-        {/* Search — full width */}
+        {/* Search - full width */}
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
@@ -189,7 +189,7 @@ export default function ShopPage() {
           />
         </div>
 
-        {/* Dropdowns — horizontal scrollable row, no wrapping */}
+        {/* Dropdowns - horizontal scrollable row, no wrapping */}
         <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1">
           {/* Category */}
           <div className="relative flex-shrink-0">

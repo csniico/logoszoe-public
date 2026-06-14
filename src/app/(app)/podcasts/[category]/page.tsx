@@ -15,7 +15,7 @@ import { ArrowLeft, Mic2, Play, Pause, Eye } from "lucide-react";
 let globalAudio: HTMLAudioElement | null = null;
 
 function formatDuration(src: string) {
-  // We don't know duration until the audio loads — show nothing until then
+  // We don't know duration until the audio loads - show nothing until then
   return null;
 }
 

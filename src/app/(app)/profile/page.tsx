@@ -8,7 +8,7 @@ import { userApi, storageApi, streakApi, ApiError } from "@/lib/api";
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function formatMemberSince(iso?: string) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
@@ -317,7 +317,7 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Left — avatar + identity */}
+        {/* Left - avatar + identity */}
         <div className="space-y-4">
           {/* Avatar card */}
           <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
@@ -352,7 +352,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Right — forms */}
+        {/* Right - forms */}
         <div className="lg:col-span-2 space-y-5">
 
           {/* Personal info */}
@@ -372,7 +372,7 @@ export default function ProfilePage() {
             <h3 className="font-semibold text-gray-900 mb-1">Change password</h3>
             <p className="text-xs text-gray-400 mb-5">
               {user.googleId
-                ? "Your account uses Google sign-in — password change is not available."
+                ? "Your account uses Google sign-in - password change is not available."
                 : "Choose a strong password you don't use anywhere else."}
             </p>
             {user.googleId ? (

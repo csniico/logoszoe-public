@@ -215,21 +215,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard
           icon={Flame}
-          value={loading ? "—" : `${streak?.current ?? 0} days`}
+          value={loading ? "-" : `${streak?.current ?? 0} days`}
           label="Current streak"
           bg="bg-gold-50"
           iconColor="text-gold-500"
         />
         <StatCard
           icon={BookOpen}
-          value={loading ? "—" : `${readDays} / 30`}
+          value={loading ? "-" : `${readDays} / 30`}
           label="Days read this month"
           bg="bg-primary-50"
           iconColor="text-primary-600"
         />
         <StatCard
           icon={GraduationCap}
-          value={loading ? "—" : inProgress}
+          value={loading ? "-" : inProgress}
           label="Courses in progress"
           bg="bg-gray-100"
           iconColor="text-gray-700"
@@ -247,7 +247,7 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between mb-1">
               <div>
                 <h2 className="font-semibold text-gray-900">Reading activity</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Last 30 days — gold bars are days you read</p>
+                <p className="text-xs text-gray-400 mt-0.5">Last 30 days - gold bars are days you read</p>
               </div>
               {!loading && (
                 <span className="text-xs font-semibold text-gold-600 bg-gold-50 border border-gold-100 px-2.5 py-1 rounded-full flex-shrink-0">
@@ -425,7 +425,7 @@ export default function DashboardPage() {
                 )}
                 {(streak?.current ?? 0) > 0 && (
                   <p className="text-xs text-gold-600 text-center mt-3 font-medium">
-                    {(streak?.current ?? 0) >= 7 ? "You're on fire! Keep it up 🔥" : "Great progress — keep going!"}
+                    {(streak?.current ?? 0) >= 7 ? "You're on fire! Keep it up 🔥" : "Great progress - keep going!"}
                   </p>
                 )}
               </>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
             <p className="text-sm leading-relaxed font-medium mb-3">
               "Trust in the Lord with all your heart and lean not on your own understanding."
             </p>
-            <p className="text-xs text-primary-300">— Proverbs 3:5</p>
+            <p className="text-xs text-primary-300">- Proverbs 3:5</p>
           </div>
 
           {/* Quick links */}

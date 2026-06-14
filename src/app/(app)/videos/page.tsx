@@ -142,7 +142,7 @@ export default function VideosPage() {
         />
       </div>
 
-      {/* Category pills — link to /videos/[category] routes */}
+      {/* Category pills - link to /videos/[category] routes */}
       {!loading && categories.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
           <span className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 text-white">

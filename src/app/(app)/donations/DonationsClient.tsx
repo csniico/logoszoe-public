@@ -22,7 +22,7 @@ import { purchaseDonation, PurchaseCancelledError } from "@/lib/revenuecat";
 import { resumePaystack } from "@/lib/paystack";
 
 function formatAmount(amount?: number, currency?: string): string {
-  if (amount == null) return "—";
+  if (amount == null) return "-";
   const cur = (currency || "USD").toUpperCase();
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency: cur }).format(amount / 100);
@@ -110,7 +110,7 @@ export function DonationsClient({
         });
         setHistory((h) => [created, ...h.filter((d) => d._id !== created._id)]);
       } catch {
-        // payment succeeded but logging failed — still thank the donor
+        // payment succeeded but logging failed - still thank the donor
       }
       setToast({
         kind: "success",
@@ -263,7 +263,7 @@ export function DonationsClient({
           </div>
         </section>
 
-        {/* Got Questions? (FAQ) — right column on desktop, collapsed by default */}
+        {/* Got Questions? (FAQ) - right column on desktop, collapsed by default */}
         <aside className="w-full lg:w-80 lg:flex-shrink-0 lg:sticky lg:top-6">
           <h2 className="text-lg font-bold text-gray-900">Got Questions?</h2>
           <p className="text-sm text-gray-500 mb-4">

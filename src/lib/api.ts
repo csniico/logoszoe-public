@@ -1,6 +1,6 @@
 import { getToken, getRefreshToken, setTokens, clearTokens } from "./tokens";
 
-// Always relative — requests go to Next.js /api/... which proxies to the backend.
+// Always relative - requests go to Next.js /api/... which proxies to the backend.
 // The backend URL lives in API_URL (server-side env var, never in the bundle).
 const BASE = "/api";
 
@@ -82,7 +82,7 @@ async function refreshAccessToken(): Promise<string> {
   });
 
   if (!res.ok) {
-    // Do NOT call clearTokens() here — let AuthContext decide to sign out.
+    // Do NOT call clearTokens() here - let AuthContext decide to sign out.
     // Prematurely clearing tokens here causes any 401 on any endpoint to
     // cascade into a full sign-out, even if other tokens are still valid.
     throw new ApiError(401, "Session expired. Please sign in again.");
@@ -124,7 +124,7 @@ export async function apiFetch<T = unknown>(
     throw new ApiError(res.status, Array.isArray(message) ? message.join(". ") : message);
   }
 
-  // 204 No Content (and any empty body) — nothing to parse.
+  // 204 No Content (and any empty body) - nothing to parse.
   // Calling res.json() on an empty body throws "Unexpected end of JSON input".
   if (res.status === 204) return undefined as T;
   const text = await res.text();
@@ -135,7 +135,7 @@ export async function apiFetch<T = unknown>(
 // ── Auth endpoints ───────────────────────────────────────────────────────────
 
 export const authApi = {
-  /** POST /auth/sign-up — sends verification email, does NOT return tokens */
+  /** POST /auth/sign-up - sends verification email, does NOT return tokens */
   register(data: { firstname: string; lastname: string; email: string; password: string }) {
     return apiFetch<{ message: string; id: string }>("/auth/sign-up", {
       method: "POST",
@@ -151,7 +151,7 @@ export const authApi = {
     });
   },
 
-  /** POST /auth/verify-email — sends a 6-digit code (also used for forgot-password) */
+  /** POST /auth/verify-email - sends a 6-digit code (also used for forgot-password) */
   sendVerificationEmail(email: string) {
     return apiFetch<{ message: string; id: string }>("/auth/verify-email", {
       method: "POST",
@@ -159,7 +159,7 @@ export const authApi = {
     });
   },
 
-  /** POST /auth/verify-code — confirms email with 6-digit code, returns tokens */
+  /** POST /auth/verify-code - confirms email with 6-digit code, returns tokens */
   verifyCode(email: string, code: string) {
     return apiFetch<AuthResponse>("/auth/verify-code", {
       method: "POST",
@@ -167,7 +167,7 @@ export const authApi = {
     });
   },
 
-  /** POST /auth/reset-password — code from verify-email + new password */
+  /** POST /auth/reset-password - code from verify-email + new password */
   resetPassword(data: { email: string; code: string; newPassword: string }) {
     return apiFetch<{ message: string }>("/auth/reset-password", {
       method: "POST",
@@ -175,7 +175,7 @@ export const authApi = {
     });
   },
 
-  /** POST /auth/sign-in-google-mobile — for web we pass idToken from Google */
+  /** POST /auth/sign-in-google-mobile - for web we pass idToken from Google */
   googleSignIn(idToken: string) {
     return apiFetch<AuthResponse>("/auth/sign-in-google-mobile", {
       method: "POST",
@@ -187,7 +187,7 @@ export const authApi = {
 // ── User endpoints ───────────────────────────────────────────────────────────
 
 export const userApi = {
-  /** GET /users/profile — requires Bearer token */
+  /** GET /users/profile - requires Bearer token */
   me() {
     return apiFetch<User>("/users/profile");
   },
@@ -235,7 +235,7 @@ export const userApi = {
 
 export const storageApi = {
   /**
-   * POST /storage/presigned-url — returns a short-lived S3 presigned PUT URL.
+   * POST /storage/presigned-url - returns a short-lived S3 presigned PUT URL.
    * key must start with an allowed prefix (e.g. "profile-pictures/{userId}/...").
    */
   getPresignedUrl(key: string, mimeType: string) {
@@ -288,7 +288,7 @@ export interface StreakSummary {
 export const streakApi = {
   /**
    * POST /streaks/devotionals/:devotionalId/read
-   * Records that the user opened this devotional today. Idempotent — safe
+   * Records that the user opened this devotional today. Idempotent - safe
    * to call on every page load; the backend ignores duplicate same-day reads.
    */
   recordRead(devotionalId: string) {
@@ -380,19 +380,19 @@ export interface Devotional {
 }
 
 export const devotionalApi = {
-  /** GET /devotionals/daily — today's devotional (falls back to most recent) */
+  /** GET /devotionals/daily - today's devotional (falls back to most recent) */
   getDaily() {
     return apiFetch<Devotional>("/devotionals/daily");
   },
 
-  /** GET /devotionals?page=1&limit=25 — paginated archive */
+  /** GET /devotionals?page=1&limit=25 - paginated archive */
   getAll(page = 1, limit = 25) {
     return apiFetch<{ data: Devotional[]; total: number; page: number; totalPages: number }>(
       `/devotionals?page=${page}&limit=${limit}`
     );
   },
 
-  /** GET /devotionals/:id — full detail, increments hits */
+  /** GET /devotionals/:id - full detail, increments hits */
   getById(id: string) {
     return apiFetch<Devotional>(`/devotionals/${id}`);
   },
@@ -423,7 +423,7 @@ export const bookmarkApi = {
   /**
    * POST /bookmarks/toggle
    * Adds the bookmark if it doesn't exist, removes it if it does.
-   * Returns { bookmarked: boolean } — use this to sync button state.
+   * Returns { bookmarked: boolean } - use this to sync button state.
    */
   toggle(data: { itemId: string; type: BookmarkType; title: string; imageUrl?: string }) {
     return apiFetch<{ bookmarked: boolean }>("/bookmarks/toggle", {
@@ -547,14 +547,14 @@ export const courseApi = {
   unmarkComplete(id: string, lessonId: string) {
     return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/complete`, { method: "DELETE" });
   },
-  /** POST /courses/:id/lessons/:lessonId/submissions — save study/reflection answers */
+  /** POST /courses/:id/lessons/:lessonId/submissions - save study/reflection answers */
   submitAnswers(id: string, lessonId: string, responses: { questionId: string; questionText: string; questionType: string; userResponse: string }[]) {
     return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/submissions`, {
       method: "POST",
       body: JSON.stringify({ responses }),
     });
   },
-  /** DELETE /courses/:id/lessons/:lessonId/submissions — wipe the learner's submission */
+  /** DELETE /courses/:id/lessons/:lessonId/submissions - wipe the learner's submission */
   deleteSubmission(id: string, lessonId: string) {
     return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/submissions`, { method: "DELETE" });
   },
@@ -597,25 +597,25 @@ export interface CreateDonationPayload {
 }
 
 export const donationApi = {
-  /** GET /donations — the current user's own donation history (newest first). */
+  /** GET /donations - the current user's own donation history (newest first). */
   getMine() {
     return apiFetch<Donation[]>("/donations");
   },
-  /** POST /donations — log a completed RevenueCat web purchase. */
+  /** POST /donations - log a completed RevenueCat web purchase. */
   log(payload: CreateDonationPayload) {
     return apiFetch<Donation>("/donations", {
       method: "POST",
       body: JSON.stringify(payload),
     });
   },
-  /** POST /donations/paystack/initialize — start a Mobile Money transaction. */
+  /** POST /donations/paystack/initialize - start a Mobile Money transaction. */
   paystackInitialize(productIdentifier: string, category: DonationCategory, amount: number) {
     return apiFetch<{ accessCode: string; reference: string; authorizationUrl: string }>(
       "/donations/paystack/initialize",
       { method: "POST", body: JSON.stringify({ productIdentifier, category, amount }) },
     );
   },
-  /** GET /donations/paystack/verify/:reference — verify + record a Mobile Money donation. */
+  /** GET /donations/paystack/verify/:reference - verify + record a Mobile Money donation. */
   paystackVerify(reference: string) {
     return apiFetch<Donation>(`/donations/paystack/verify/${encodeURIComponent(reference)}`);
   },
@@ -673,11 +673,11 @@ export const submissionsApi = {
   getMine() {
     return apiFetch<MySubmissionItem[]>("/courses/submissions/mine");
   },
-  /** GET /courses/submissions/:submissionId — detail + remarks thread */
+  /** GET /courses/submissions/:submissionId - detail + remarks thread */
   getDetail(submissionId: string) {
     return apiFetch<LearnerSubmissionDetail>(`/courses/submissions/${submissionId}`);
   },
-  /** POST /courses/submissions/:submissionId/replies — learner reply */
+  /** POST /courses/submissions/:submissionId/replies - learner reply */
   reply(submissionId: string, content: string) {
     return apiFetch<SubmissionRemark>(`/courses/submissions/${submissionId}/replies`, {
       method: "POST",
@@ -781,7 +781,7 @@ export interface BiblePassageResult {
   passage: string[];
 }
 
-// Canonical Bible book order — used to sort API results correctly.
+// Canonical Bible book order - used to sort API results correctly.
 export const BIBLE_BOOK_ORDER: string[] = [
   // ── Old Testament (39) ──────────────────────────────────────────────────────
   "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
@@ -812,7 +812,7 @@ export function sortByBibleOrder<T extends { name: string }>(books: T[]): T[] {
   );
 }
 
-// Canonical NT book names — anything not in this set is OT.
+// Canonical NT book names - anything not in this set is OT.
 export const NT_BOOK_NAMES = new Set([
   "Matthew", "Mark", "Luke", "John", "Acts", "Romans",
   "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians",
@@ -852,11 +852,11 @@ export interface Video {
 }
 
 export const videoApi = {
-  /** GET /videos — no auth required */
+  /** GET /videos - no auth required */
   getAll() {
     return apiFetch<Video[]>("/videos");
   },
-  /** GET /videos/:category — no auth required */
+  /** GET /videos/:category - no auth required */
   getByCategory(category: string) {
     return apiFetch<Video[]>(`/videos/${encodeURIComponent(category)}`);
   },
@@ -913,11 +913,11 @@ export interface Product {
 }
 
 export const shopApi = {
-  /** GET /shop/products — no auth required */
+  /** GET /shop/products - no auth required */
   getAll() {
     return apiFetch<Product[]>("/shop/products");
   },
-  /** GET /shop/products/:id — no auth required */
+  /** GET /shop/products/:id - no auth required */
   getById(id: string) {
     return apiFetch<Product>(`/shop/products/${id}`);
   },
@@ -945,13 +945,13 @@ export interface CommunityPost {
 }
 
 export const communityApi = {
-  /** GET /posts?cursor=ISO&limit=20 — no auth required */
+  /** GET /posts?cursor=ISO&limit=20 - no auth required */
   getFeed(cursor?: string, limit = 20) {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor) params.set("cursor", cursor);
     return apiFetch<CommunityPost[]>(`/posts?${params}`);
   },
-  /** GET /posts/:id — no auth required */
+  /** GET /posts/:id - no auth required */
   getPost(id: string) {
     return apiFetch<CommunityPost>(`/posts/${id}`);
   },
@@ -961,22 +961,22 @@ export const communityApi = {
     if (cursor) params.set("cursor", cursor);
     return apiFetch<CommunityPost[]>(`/posts/${id}/replies?${params}`);
   },
-  /** POST /posts — requires auth */
+  /** POST /posts - requires auth */
   createPost(data: { text: string; parentId?: string; anonymous?: boolean; images?: { url: string; key: string }[] }) {
     return apiFetch<CommunityPost>("/posts", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
-  /** DELETE /posts/:id — requires auth, owner only */
+  /** DELETE /posts/:id - requires auth, owner only */
   deletePost(id: string) {
     return apiFetch<void>(`/posts/${id}`, { method: "DELETE" });
   },
-  /** POST /posts/:id/like — toggles like, requires auth */
+  /** POST /posts/:id/like - toggles like, requires auth */
   toggleLike(id: string) {
     return apiFetch<CommunityPost>(`/posts/${id}/like`, { method: "POST" });
   },
-  /** POST /posts/:id/bookmark — toggles bookmark, requires auth */
+  /** POST /posts/:id/bookmark - toggles bookmark, requires auth */
   toggleBookmark(id: string) {
     return apiFetch<CommunityPost>(`/posts/${id}/bookmark`, { method: "POST" });
   },
@@ -1040,7 +1040,7 @@ export const searchApi = {
     });
     return apiFetch<SearchResponse>(`/search?${params}`);
   },
-  /** Fire all scopes in parallel — for the "All" combined view */
+  /** Fire all scopes in parallel - for the "All" combined view */
   searchAll(q: string, limit = 5) {
     return Promise.all(
       SEARCH_SCOPES.map((s) =>

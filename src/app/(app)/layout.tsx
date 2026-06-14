@@ -7,7 +7,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Left sidebar (desktop only) */}
       <Sidebar />
 
-      {/* Top bar (desktop only — sits right of sidebar) */}
+      {/* Top bar (desktop only - sits right of sidebar) */}
       <TopBar />
 
       {/* Mobile header + drawer */}

@@ -84,7 +84,7 @@ export default function LandingPage() {
             every single day
           </h1>
           <p className="text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Devotionals, courses, articles, podcasts and a vibrant community —
+            Devotionals, courses, articles, podcasts and a vibrant community -
             everything you need to live a life rooted in the Word.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -212,7 +212,7 @@ async function uploadAttachments(attachments: Attachment[]): Promise<{ url: stri
       const ext = file.name.split(".").pop() ?? "jpg";
       const key = `community/${crypto.randomUUID()}.${ext}`;
       const { uploadUrl, fileKey, fileUrl } = await storageApi.getPresignedUrl(key, file.type);
-      // Upload directly to S3 — do NOT go through the Next.js proxy
+      // Upload directly to S3 - do NOT go through the Next.js proxy
       await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
       return { url: fileUrl, key: fileKey };
     }),

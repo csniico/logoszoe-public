@@ -2,7 +2,7 @@
 //
 // The transaction is initialized server-side (secret key); the browser only
 // ever receives an `access_code`, which `resumeTransaction` uses to open the
-// hosted checkout. No secret — and no public key — is needed here.
+// hosted checkout. No secret - and no public key - is needed here.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -30,7 +30,7 @@ type PaystackPopup = {
 
 /**
  * Open the Paystack popup for an already-initialized transaction.
- * Browser-only — dynamically imported so it never touches SSR.
+ * Browser-only - dynamically imported so it never touches SSR.
  */
 export async function resumePaystack(accessCode: string, handlers: ResumeHandlers): Promise<void> {
   const mod = await import("@paystack/inline-js");

@@ -280,7 +280,7 @@ function SearchModal({
           )}
         </div>
 
-        {/* Footer — see all on full search page */}
+        {/* Footer - see all on full search page */}
         {hasResults && (
           <div className="border-t border-gray-50 px-4 py-2.5 flex-shrink-0">
             <button
@@ -438,7 +438,7 @@ export function TopBar() {
 
   return (
     <>
-      {/* Backdrop — clicking outside closes modal */}
+      {/* Backdrop - clicking outside closes modal */}
       {modalOpen && (
         <div
           className="fixed inset-0 top-14 lg:left-64 z-20"
@@ -491,7 +491,7 @@ export function TopBar() {
         </div>
       </header>
 
-      {/* Search modal — rendered outside header so it can overflow */}
+      {/* Search modal - rendered outside header so it can overflow */}
       {modalOpen && debouncedQ.trim() && (
         <div id="search-modal-card">
           <SearchModal

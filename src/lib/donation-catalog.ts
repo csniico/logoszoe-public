@@ -1,6 +1,6 @@
 import type { DonationCategory } from "./api";
 
-// Web Billing product identifiers — mirror the "Logos Zoe (Web)" products in
+// Web Billing product identifiers - mirror the "Logos Zoe (Web)" products in
 // RevenueCat (same IDs as the iOS catalog). Titles and descriptions are copied
 // verbatim from the mobile app (donation_catalog.dart + donation_option_contents.dart).
 export interface DonationCause {

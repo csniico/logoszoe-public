@@ -5,11 +5,11 @@ const categories = ["All", "Faith", "Theology", "Growth", "Community", "Prayer",
 
 const articles = [
   { id: "1", slug: "finding-peace-in-chaos", title: "Finding Peace in the Midst of Chaos", category: "Faith", readTime: "4 min", views: 1240, excerpt: "In a world that never slows down, finding stillness in God is both our greatest challenge and our deepest need." },
-  { id: "2", slug: "daily-bible-study-habits", title: "5 Habits That Will Transform Your Bible Study", category: "Growth", readTime: "6 min", views: 890, excerpt: "Consistency in the Word doesn't require hours each day — it requires intentionality and the right approach." },
-  { id: "3", slug: "community-and-faith", title: "Why Community is Essential to Your Faith", category: "Community", readTime: "3 min", views: 650, excerpt: "Faith was never meant to be a solo journey. Discover why the early church gathered — and why you should too." },
-  { id: "4", slug: "understanding-grace", title: "Understanding Grace Beyond Sunday School", category: "Theology", readTime: "8 min", views: 2100, excerpt: "Grace is more than a familiar word — it's a revolutionary truth that changes how we see ourselves and others." },
+  { id: "2", slug: "daily-bible-study-habits", title: "5 Habits That Will Transform Your Bible Study", category: "Growth", readTime: "6 min", views: 890, excerpt: "Consistency in the Word doesn't require hours each day - it requires intentionality and the right approach." },
+  { id: "3", slug: "community-and-faith", title: "Why Community is Essential to Your Faith", category: "Community", readTime: "3 min", views: 650, excerpt: "Faith was never meant to be a solo journey. Discover why the early church gathered - and why you should too." },
+  { id: "4", slug: "understanding-grace", title: "Understanding Grace Beyond Sunday School", category: "Theology", readTime: "8 min", views: 2100, excerpt: "Grace is more than a familiar word - it's a revolutionary truth that changes how we see ourselves and others." },
   { id: "5", slug: "prayer-that-moves-mountains", title: "Prayer That Actually Moves Mountains", category: "Prayer", readTime: "5 min", views: 1780, excerpt: "Jesus didn't teach us to pray eloquently. He taught us to pray boldly, with faith and persistence." },
-  { id: "6", slug: "servant-leadership", title: "The Forgotten Art of Servant Leadership", category: "Leadership", readTime: "7 min", views: 430, excerpt: "True Christian leadership isn't about position or platform — it's about towel and basin." },
+  { id: "6", slug: "servant-leadership", title: "The Forgotten Art of Servant Leadership", category: "Leadership", readTime: "7 min", views: 430, excerpt: "True Christian leadership isn't about position or platform - it's about towel and basin." },
 ];
 
 export default function ArticlesPage() {

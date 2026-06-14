@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount — rehydrate from localStorage, then validate with server
+  // On mount - rehydrate from localStorage, then validate with server
   useEffect(() => {
     const saved = loadUser<User>();
     if (saved) setUser(saved);
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) { setLoading(false); return; }
 
     // Validate the stored token is still good.
-    // Only clear tokens on an explicit 401 — a network error (ECONNREFUSED,
+    // Only clear tokens on an explicit 401 - a network error (ECONNREFUSED,
     // timeout, etc.) must NOT sign the user out; keep the cached user instead.
     userApi.me()
       .then((u) => { setUser(u); saveUser(u); })
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(u);
       saveUser(u);
     } catch {
-      // silently ignore — token may have already been refreshed by apiFetch
+      // silently ignore - token may have already been refreshed by apiFetch
     }
   }, []);
 

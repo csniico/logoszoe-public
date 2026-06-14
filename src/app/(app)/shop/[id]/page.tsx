@@ -180,7 +180,7 @@ export default function ProductDetailPage({
                 disabled
                 className="w-full py-3 rounded-xl font-semibold text-sm bg-amber-500 text-white opacity-80 cursor-not-allowed"
               >
-                Pre-order — checkout not yet available
+                Pre-order - checkout not yet available
               </button>
             ) : (
               <button

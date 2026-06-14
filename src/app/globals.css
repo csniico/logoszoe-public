@@ -8,7 +8,7 @@
   --font-sans:  var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-serif: var(--font-playfair), "Georgia", serif;
 
-  /* Primary — steel blue #5A82A8 */
+  /* Primary - steel blue #5A82A8 */
   --color-primary-50:  #eef3f8;
   --color-primary-100: #d5e4ef;
   --color-primary-200: #abc9df;
@@ -21,7 +21,7 @@
   --color-primary-900: #1e3047;
   --color-primary-950: #111c2e;
 
-  /* Gold / tertiary — antique gold #C9A059 */
+  /* Gold / tertiary - antique gold #C9A059 */
   --color-gold-50:  #fdf6e8;
   --color-gold-100: #f8e9c4;
   --color-gold-200: #f0d08a;
@@ -33,7 +33,7 @@
   --color-gold-800: #664a26;
   --color-gold-900: #48331b;
 
-  /* Ivory — warm off-white #FDFBF5 */
+  /* Ivory - warm off-white #FDFBF5 */
   --color-ivory: #fdfbf5;
 }
 

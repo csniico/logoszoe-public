@@ -12,7 +12,7 @@ import { userApi } from "@/lib/api";
  *   /auth/callback?token=<jwt>&refreshToken=<jwt>
  *
  * This page stores the tokens, fetches the user profile, and
- * redirects to the dashboard — or falls back to the login page
+ * redirects to the dashboard - or falls back to the login page
  * on any error.
  */
 export default function AuthCallbackPage() {

@@ -7,7 +7,7 @@ export function setTokens(token: string, refreshToken: string) {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(REFRESH_KEY, refreshToken);
   // Also write a plain cookie so middleware can read it
-  // Both cookies last 30 days — the middleware only checks cookie *presence*
+  // Both cookies last 30 days - the middleware only checks cookie *presence*
   // as a quick gate; real JWT validation happens on the NestJS backend.
   // The 1-hour access-token cookie was causing users to be bounced out by
   // middleware every hour even though their refresh token was still valid.

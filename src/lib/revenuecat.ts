@@ -3,7 +3,7 @@
 // The SDK is browser-only, so we dynamically import it inside the purchase
 // handler (never at module top-level / SSR). The publishable Web Billing key is
 // passed in from a server component that reads it from `process.env` at request
-// time — it is NOT inlined into the client bundle at build time.
+// time - it is NOT inlined into the client bundle at build time.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -61,7 +61,7 @@ function findPackage(offerings: any, productIdentifier: string): any | null {
 
 /**
  * Flatten every package RevenueCat returns across all offerings into a simple
- * list of { offering, productId, price }. Used for diagnostics — a product that
+ * list of { offering, productId, price }. Used for diagnostics - a product that
  * doesn't appear here is NOT attached to any published offering (so it can be
  * neither priced nor purchased) and must be added to an offering in RevenueCat.
  */
@@ -88,7 +88,7 @@ function collectAvailableProducts(
 /**
  * Best-effort: resolve formatted price strings for a set of product identifiers
  * from the current offerings. Returns a map of productId → formatted price
- * (e.g. "$10.00"). Never throws — returns whatever it can resolve.
+ * (e.g. "$10.00"). Never throws - returns whatever it can resolve.
  */
 export async function fetchProductPrices(
   apiKey: string,
@@ -147,7 +147,7 @@ export async function purchaseDonation(opts: {
       collectAvailableProducts(offerings),
     );
     throw new Error(
-      "This option isn't available yet — it needs to be added to an offering in RevenueCat.",
+      "This option isn't available yet - it needs to be added to an offering in RevenueCat.",
     );
   }
 

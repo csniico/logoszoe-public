@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Server-side only — never sent to the browser
+// Server-side only - never sent to the browser
 const BACKEND = process.env.API_URL ?? "http://localhost:3001";
 
 // Forward every method to the backend
@@ -17,7 +17,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     body:    request.method !== "GET" && request.method !== "HEAD"
                ? await request.arrayBuffer()
                : undefined,
-    // Don't follow redirects — pass them straight back to the client
+    // Don't follow redirects - pass them straight back to the client
     redirect: "manual",
   });
 

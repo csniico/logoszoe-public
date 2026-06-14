@@ -94,7 +94,7 @@ function LessonAccordionItem({
 
   return (
     <div className={`border border-gray-100 rounded-xl overflow-hidden transition-all ${open ? "shadow-sm" : ""}`}>
-      {/* Header — always visible */}
+      {/* Header - always visible */}
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-3 px-4 py-3.5 bg-white hover:bg-gray-50 transition-colors text-left"
@@ -147,7 +147,7 @@ function LessonAccordionItem({
                   <Clock size={11} /> {formatDuration(lesson.durationSec)}
                 </span>
               ) : (
-                <span className="text-xs text-gray-300">—</span>
+                <span className="text-xs text-gray-300">-</span>
               )}
             </div>
 

@@ -94,7 +94,7 @@ function Sidebar({
 
   return (
     <div className="space-y-4">
-      {/* Streak card — hidden on mobile (shown in top bar instead), click opens calendar modal */}
+      {/* Streak card - hidden on mobile (shown in top bar instead), click opens calendar modal */}
       <button
         onClick={() => setModalOpen(true)}
         className="hidden lg:block w-full bg-white rounded-2xl border border-gray-100 p-5 text-left hover:border-orange-200 hover:shadow-sm transition-all group"
@@ -221,7 +221,7 @@ export default function DevotionalDetailPage({
     // Load sidebar data in parallel: recent archive + record read + streak + bookmark status
     Promise.all([
       devotionalApi.getAll(1, 8),
-      streakApi.recordRead(id),   // idempotent — safe every page load
+      streakApi.recordRead(id),   // idempotent - safe every page load
       streakApi.getMyStreak(),
       bookmarkApi.checkMany([{ itemId: id, type: "devotional" }]),
     ])
@@ -231,7 +231,7 @@ export default function DevotionalDetailPage({
         setBookmarked(bookmarkMap[`devotional:${id}`] ?? false);
       })
       .catch(() => {
-        // Streak / bookmark errors are non-fatal — sidebar just shows zeros
+        // Streak / bookmark errors are non-fatal - sidebar just shows zeros
         devotionalApi.getAll(1, 8)
           .then((archive) => setRecent(archive.data))
           .catch(() => {});
@@ -259,7 +259,7 @@ export default function DevotionalDetailPage({
       });
       setBookmarked(result.bookmarked);
     } catch {
-      // Non-fatal — button reverts visually on next load
+      // Non-fatal - button reverts visually on next load
     } finally {
       setBookmarkLoading(false);
     }
@@ -362,7 +362,7 @@ export default function DevotionalDetailPage({
                     />
                   )}
 
-                  {/* Preparatory questions — italic, no heading */}
+                  {/* Preparatory questions - italic, no heading */}
                   {devotional.preparatoryQuestions && devotional.preparatoryQuestions.length > 0 && (
                     <div className="mb-8 space-y-1.5">
                       {devotional.preparatoryQuestions.map((q, i) => (

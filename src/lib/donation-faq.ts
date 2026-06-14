@@ -1,4 +1,4 @@
-// "Got Questions?" articles — copied verbatim from the mobile app
+// "Got Questions?" articles - copied verbatim from the mobile app
 // (donation_articles_data.dart).
 
 export interface DonationFaq {

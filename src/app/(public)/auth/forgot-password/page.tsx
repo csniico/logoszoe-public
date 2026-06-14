@@ -32,7 +32,7 @@ function ForgotPasswordContent() {
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
 
-  // Step 1 — send verification email
+  // Step 1 - send verification email
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -48,7 +48,7 @@ function ForgotPasswordContent() {
     }
   }
 
-  // Step 2 — reset password with the confirmed code
+  // Step 2 - reset password with the confirmed code
   async function handleReset(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword !== confirmPassword) {

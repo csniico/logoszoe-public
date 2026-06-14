@@ -74,12 +74,12 @@ function VerifyEmailContent() {
 
     try {
       if (mode === "verify") {
-        // After register — verifies email and logs user in
+        // After register - verifies email and logs user in
         const res = await authApi.verifyCode(email, fullCode);
         loginSuccess(res);
         router.push("/dashboard");
       } else {
-        // After forgot-password — just confirms code is valid, then go to reset
+        // After forgot-password - just confirms code is valid, then go to reset
         router.push(
           `/auth/forgot-password?email=${encodeURIComponent(email)}&code=${fullCode}&step=reset`
         );

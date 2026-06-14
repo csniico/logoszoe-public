@@ -108,7 +108,7 @@ function ArticlesNav({
 
   return (
     <div className="mb-0.5">
-      {/* Articles header — click toggles category list */}
+      {/* Articles header - click toggles category list */}
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
