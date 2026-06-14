@@ -164,7 +164,7 @@ export function DonationsClient({
       {/* ── Header ── */}
       <div>
         <div className="flex items-center gap-2.5 mb-1">
-          <span className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center">
             <HandHeart size={18} className="text-primary-700" />
           </span>
           <h1 className="text-2xl font-bold text-gray-900">Donations</h1>
@@ -324,7 +324,7 @@ export function DonationsClient({
           <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden divide-y divide-gray-50">
             {history.map((d) => (
               <div key={d._id} className="flex items-center gap-3 px-4 py-3.5">
-                <span className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
                   {d.category === "partnership" ? (
                     <Heart size={15} className="text-primary-700" />
                   ) : (
@@ -421,7 +421,7 @@ function DonateSheet({
                 onClick={onCard}
                 className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/40 transition-colors text-left"
               >
-                <span className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
                   <CreditCard size={17} className="text-primary-700" />
                 </span>
                 <span className="flex-1">
@@ -435,7 +435,7 @@ function DonateSheet({
                 onClick={() => setStage("momo")}
                 className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/40 transition-colors text-left"
               >
-                <span className="w-9 h-9 rounded-lg bg-gold-50 flex items-center justify-center flex-shrink-0">
+                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Smartphone size={17} className="text-gold-600" />
                 </span>
                 <span className="flex-1">

@@ -23,7 +23,7 @@ export default function SubmissionsPage() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2.5 mb-1">
-          <span className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center">
             <ClipboardList size={18} className="text-primary-700" />
           </span>
           <h1 className="text-2xl font-bold text-gray-900">My Submissions</h1>
@@ -66,7 +66,7 @@ export default function SubmissionsPage() {
               href={`/submissions/${s._id}`}
               className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white px-4 py-4 hover:border-primary-200 hover:bg-primary-50/30 transition-colors group"
             >
-              <span className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
+              <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
                 <MessageSquare size={17} className="text-primary-700" />
               </span>
               <div className="flex-1 min-w-0">
