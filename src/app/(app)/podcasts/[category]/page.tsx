@@ -56,20 +56,14 @@ function EpisodeCard({ podcast, accentColor }: { podcast: Podcast; accentColor: 
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex gap-4 p-4">
-      {/* Thumbnail */}
-      <div
-        className="w-20 h-20 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden"
-        style={{ background: podcast.imageUrl ? undefined : `${accentColor}18` }}
-      >
-        {podcast.imageUrl ? (
-          <img
-            src={podcast.imageUrl}
-            alt={podcast.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <Mic2 size={28} style={{ color: accentColor, opacity: 0.5 }} />
-        )}
+      {/* Thumbnail — falls back to a free deterministic image (matches the mobile app) */}
+      <div className="w-20 h-20 rounded-lg flex-shrink-0 overflow-hidden bg-gray-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={podcast.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(podcast._id)}/200/200`}
+          alt={podcast.title}
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Info */}
