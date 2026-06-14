@@ -7,5 +7,8 @@ export const dynamic = "force-dynamic";
 
 export default function DonationsPage() {
   const rcApiKey = process.env.REVENUECAT_WEB_BILLING_KEY ?? null;
-  return <DonationsClient rcApiKey={rcApiKey} />;
+  // The browser doesn't need the Paystack key (the access code drives the popup),
+  // so we only pass a boolean to gate the Mobile Money option.
+  const paystackEnabled = !!process.env.PAYSTACK_PUBLIC_KEY;
+  return <DonationsClient rcApiKey={rcApiKey} paystackEnabled={paystackEnabled} />;
 }

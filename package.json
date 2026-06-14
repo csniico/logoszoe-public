@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@paystack/inline-js": "^2.22.9",
     "@revenuecat/purchases-js": "^1.42.4",
     "@tailwindcss/typography": "^0.5.19",
+    "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",

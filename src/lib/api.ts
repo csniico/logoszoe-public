@@ -608,6 +608,17 @@ export const donationApi = {
       body: JSON.stringify(payload),
     });
   },
+  /** POST /donations/paystack/initialize — start a Mobile Money transaction. */
+  paystackInitialize(productIdentifier: string, category: DonationCategory, amount: number) {
+    return apiFetch<{ accessCode: string; reference: string; authorizationUrl: string }>(
+      "/donations/paystack/initialize",
+      { method: "POST", body: JSON.stringify({ productIdentifier, category, amount }) },
+    );
+  },
+  /** GET /donations/paystack/verify/:reference — verify + record a Mobile Money donation. */
+  paystackVerify(reference: string) {
+    return apiFetch<Donation>(`/donations/paystack/verify/${encodeURIComponent(reference)}`);
+  },
 };
 
 // ── Submissions (learner-facing) ─────────────────────────────────────────────
