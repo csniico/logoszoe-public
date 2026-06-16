@@ -58,7 +58,7 @@ function getSnippet(item: SearchResult, query: string) {
 function getHref(item: SearchResult, scope: SearchScope): string {
   switch (scope) {
     case "devotionals": return `/devotionals/${item._id}`;
-    case "articles":    return item.slug ? `/articles/${item.slug}` : `/articles`;
+    case "articles":    return item.slug ? `/articles/${item.slug}` : `/dashboard`;
     case "podcasts":    return item.category ? `/podcasts/${item.category}` : `/podcasts`;
     case "videos":      return item.youtubeId ? `https://www.youtube.com/watch?v=${item.youtubeId}` : `/videos`;
     case "products":    return `/shop/${item._id}`;
@@ -130,9 +130,6 @@ function ResultCard({
           <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">
             {highlight(snippet, query)}
           </p>
-        )}
-        {scope === "products" && item.price != null && (
-          <p className="text-xs font-semibold text-gray-700 mt-1">${item.price.toFixed(2)}</p>
         )}
         {scope === "devotionals" && item.day && item.month && item.year && (
           <p className="text-xs text-gray-400 mt-0.5">

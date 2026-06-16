@@ -86,10 +86,7 @@ function ProductCard({ product }: { product: Product }) {
         <h3 className="font-semibold text-gray-900 mt-0.5 mb-2 text-sm leading-snug group-hover:text-gray-900 transition-colors line-clamp-2 flex-1">
           {product.title}
         </h3>
-        <div className="flex items-center justify-between mt-auto pt-2">
-          <span className="text-base font-bold text-gray-900">
-            ${product.price.toFixed(2)}
-          </span>
+        <div className="flex items-center justify-end mt-auto pt-2">
           {unavailable ? (
             <span className={`text-xs font-medium px-2.5 py-1 rounded-lg ${STATUS_STYLES[product.status]}`}>
               {statusLabel(product.status)}
@@ -107,14 +104,12 @@ function ProductCard({ product }: { product: Product }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-type SortKey = "newest" | "price_asc" | "price_desc" | "az" | "za";
+type SortKey = "newest" | "az" | "za";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "newest",     label: "Newest" },
-  { value: "price_asc",  label: "Price: Low → High" },
-  { value: "price_desc", label: "Price: High → Low" },
-  { value: "az",         label: "A → Z" },
-  { value: "za",         label: "Z → A" },
+  { value: "newest", label: "Newest" },
+  { value: "az",     label: "A → Z" },
+  { value: "za",     label: "Z → A" },
 ];
 
 export default function ShopPage() {
@@ -151,8 +146,6 @@ export default function ShopPage() {
     if (status) list = list.filter((p) => p.status === status);
 
     switch (sort) {
-      case "price_asc":  list.sort((a, b) => a.price - b.price); break;
-      case "price_desc": list.sort((a, b) => b.price - a.price); break;
       case "az":         list.sort((a, b) => a.title.localeCompare(b.title)); break;
       case "za":         list.sort((a, b) => b.title.localeCompare(a.title)); break;
       case "newest":

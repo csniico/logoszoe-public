@@ -54,7 +54,7 @@ function getTitle(item: SearchResult) {
 function getHref(item: SearchResult, scope: SearchScope): string {
   switch (scope) {
     case "devotionals": return `/devotionals/${item._id}`;
-    case "articles":    return item.slug ? `/articles/${item.slug}` : `/articles`;
+    case "articles":    return item.slug ? `/articles/${item.slug}` : `/dashboard`;
     case "podcasts":    return item.category ? `/podcasts/${item.category}` : `/podcasts`;
     case "videos":      return item.youtubeId ? `https://www.youtube.com/watch?v=${item.youtubeId}` : `/videos`;
     case "products":    return `/shop/${item._id}`;

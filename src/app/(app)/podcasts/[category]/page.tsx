@@ -346,10 +346,7 @@ export default function PodcastCategoryPage({
           <ArrowLeft size={14} /> All podcasts
         </Link>
 
-        <div className="flex items-center gap-3">
-          {meta?.color && (
-            <div className="w-3 h-10 rounded-full flex-shrink-0" style={{ background: meta.color }} />
-          )}
+        <div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{meta?.label ?? category}</h1>
             {!loading && (

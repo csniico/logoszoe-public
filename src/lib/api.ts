@@ -36,6 +36,9 @@ export interface Category {
   icon?: string;
   description?: string;
   bannerUrl?: string;
+  /** The category's own article: a header + HTML body shown above its articles. */
+  article_title?: string;
+  article_body?: string;
 }
 
 export interface Article {
@@ -1053,6 +1056,11 @@ export const searchApi = {
 // ── Article endpoints ────────────────────────────────────────────────────────
 
 export const articleApi = {
+  /** GET /articles → Article[] (all articles, category populated) */
+  getAll() {
+    return apiFetch<Article[]>("/articles");
+  },
+
   /** GET /articles/category/:slug → Article[] */
   getByCategory(slug: string) {
     return apiFetch<Article[]>(`/articles/category/${slug}`);
@@ -1061,5 +1069,23 @@ export const articleApi = {
   /** GET /articles/:slug → { article, relatedArticles } */
   getBySlug(slug: string) {
     return apiFetch<{ article: Article; relatedArticles: Article[] }>(`/articles/${slug}`);
+  },
+};
+
+// ── Feedback endpoint ─────────────────────────────────────────────────────────
+
+export const feedbackApi = {
+  /** POST /feedback [requires auth] — emailed to the developer server-side. */
+  send(data: {
+    message: string;
+    email?: string;
+    name?: string;
+    platform?: string;
+    appVersion?: string;
+  }) {
+    return apiFetch<{ message: string }>("/feedback", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 };

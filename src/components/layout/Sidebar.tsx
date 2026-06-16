@@ -8,6 +8,7 @@ import { categoryApi, Category, streakApi, videoApi } from "@/lib/api";
 import {
   LayoutDashboard,
   BookOpen,
+  BookMarked,
   GraduationCap,
   FileText,
   Mic2,
@@ -26,6 +27,7 @@ import {
   Flame,
   Bookmark,
   Search,
+  LifeBuoy,
 } from "lucide-react";
 import { PODCAST_CATEGORIES, PodcastCategory } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
@@ -46,6 +48,7 @@ const VIDEO_CATEGORY_LABELS: Record<string, string> = {
 const topItems = [
   { label: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
   { label: "Devotionals", href: "/devotionals",  icon: BookOpen },
+  { label: "Bible",       href: "/bible",        icon: BookMarked },
   { label: "Courses",     href: "/courses",      icon: GraduationCap },
 ];
 
@@ -56,7 +59,7 @@ const bottomItems = [
   { label: "Prayer",      href: "/prayer",       icon: Heart },
   { label: "Donation",    href: "/donations",    icon: HandHeart },
   { label: "Shop",        href: "/shop",         icon: ShoppingBag },
-  { label: "Bible",       href: "/bible",        icon: BookOpen },
+  { label: "Support",     href: "/support",      icon: LifeBuoy },
 ];
 
 // ── Category dot ──────────────────────────────────────────────────────────────
@@ -94,7 +97,7 @@ function ArticlesNav({
   if (collapsed) {
     return (
       <Link
-        href="/articles"
+        href={categories[0] ? `/articles/${categories[0].slug}` : "/dashboard"}
         title="Articles"
         className={cn(
           "flex items-center justify-center px-0 py-2.5 rounded-lg mb-0.5 text-sm font-medium transition-colors",

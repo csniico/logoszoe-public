@@ -141,14 +141,9 @@ export default function ProductDetailPage({
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl font-bold text-gray-900 leading-snug mb-3">
+          <h1 className="text-2xl font-bold text-gray-900 leading-snug mb-4">
             {product.title}
           </h1>
-
-          {/* Price */}
-          <p className="text-3xl font-extrabold text-gray-900 mb-4">
-            ${product.price.toFixed(2)}
-          </p>
 
           {/* Description */}
           {product.description && (

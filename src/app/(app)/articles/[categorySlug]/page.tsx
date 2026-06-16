@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { articleApi, categoryApi, Article, Category } from "@/lib/api";
-import { Clock, Eye, FileText, ArrowLeft } from "lucide-react";
+import { Clock, Eye, FileText } from "lucide-react";
 
 function readTime(content?: string) {
   if (!content) return "2 min";
@@ -88,38 +88,49 @@ export default function CategoryArticlesPage({
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/articles"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-4"
-        >
-          <ArrowLeft size={14} /> All categories
-        </Link>
-
-        <div className="flex items-center gap-3">
-          {category?.color && (
-            <div
-              className="w-3 h-10 rounded-full flex-shrink-0"
-              style={{ background: category.color }}
+      {/* Category article: picture + header + body, before the articles */}
+      <div className="mb-10">
+        {category?.bannerUrl && (
+          <div className="rounded-2xl overflow-hidden mb-5 aspect-[16/7] bg-gray-100">
+            <img
+              src={category.bannerUrl}
+              alt={category.article_title || category.name}
+              className="w-full h-full object-cover"
             />
-          )}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {category?.name ?? categorySlug}
-            </h1>
-            {!loading && (
-              <p className="text-gray-500 text-sm mt-0.5">
-                {articles.length} article{articles.length !== 1 ? "s" : ""}
-              </p>
-            )}
           </div>
-        </div>
+        )}
 
-        {category?.description && (
-          <p className="text-gray-500 text-sm mt-3 max-w-2xl">{category.description}</p>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {category?.article_title || category?.name || categorySlug}
+        </h1>
+
+        {category?.article_body ? (
+          <div
+            className="prose prose-gray prose-sm sm:prose-base max-w-none mt-4
+              prose-headings:font-bold prose-headings:text-gray-900
+              prose-p:text-gray-700 prose-p:leading-relaxed
+              prose-a:text-gray-900 prose-a:underline
+              prose-strong:text-gray-900
+              prose-blockquote:border-l-4 prose-blockquote:border-gray-200 prose-blockquote:text-gray-500 prose-blockquote:italic
+              prose-img:rounded-xl"
+            dangerouslySetInnerHTML={{ __html: category.article_body }}
+          />
+        ) : (
+          category?.description && (
+            <p className="text-gray-500 text-sm mt-3 max-w-2xl">{category.description}</p>
+          )
         )}
       </div>
+
+      {/* Articles heading */}
+      {!loading && !error && articles.length > 0 && (
+        <div className="mb-4 flex items-baseline justify-between border-t border-gray-100 pt-8">
+          <h2 className="text-lg font-bold text-gray-900">Articles</h2>
+          <span className="text-gray-400 text-sm">
+            {articles.length} article{articles.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
 
       {/* States */}
       {loading && (
