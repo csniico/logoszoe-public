@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   courseApi, courseVideoApi,
-  CourseVideo, Course, Lesson, CourseProgress,
+  CourseVideo, Course, CourseModule, Lesson, CourseProgress,
 } from "@/lib/api";
 import {
   BookOpen, CheckCircle2, ChevronDown, Circle, Clock,
@@ -362,17 +362,46 @@ function StudySection({ title, children, defaultOpen = false }: { title: string;
 function LessonSidebar({
   courseId,
   currentLessonId,
+  modules,
   lessons,
   completedIds,
 }: {
   courseId: string;
   currentLessonId: string;
+  modules: CourseModule[];
   lessons: Lesson[];
   completedIds: Set<string>;
 }) {
   const completed = completedIds.size;
   const total = lessons.length;
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const sortedModules = [...modules].sort((a, b) => a.order - b.order);
+
+  // Render one lesson row.
+  const lessonRow = (l: Lesson, idx: number) => {
+    const isCurrent = l._id === currentLessonId;
+    const isDone = completedIds.has(l._id);
+    return (
+      <li key={l._id}>
+        <Link
+          href={`/courses/${courseId}/lessons/${l._id}`}
+          className={`flex items-center gap-3 px-4 py-3 transition-colors ${isCurrent ? "bg-gray-100" : "hover:bg-gray-50"}`}
+        >
+          <span className="text-[11px] text-gray-400 w-4 flex-shrink-0">{idx + 1}</span>
+          <span className={`flex-1 text-xs leading-snug line-clamp-2 ${isCurrent ? "font-semibold text-gray-800" : "text-gray-600"}`}>
+            {l.title}
+          </span>
+          {isDone
+            ? <CheckCircle2 size={13} className="text-gray-700 flex-shrink-0" />
+            : isCurrent
+              ? <ChevronRight size={13} className="text-gray-500 flex-shrink-0" />
+              : <Circle size={13} className="text-gray-200 flex-shrink-0" />
+          }
+        </Link>
+      </li>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -390,36 +419,35 @@ function LessonSidebar({
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 border-b border-gray-50">
-          Lessons
-        </p>
-        <ul className="divide-y divide-gray-50">
-          {lessons.map((l, idx) => {
-            const isCurrent = l._id === currentLessonId;
-            const isDone = completedIds.has(l._id);
+      {sortedModules.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 border-b border-gray-50">
+            Lessons
+          </p>
+          <ul className="divide-y divide-gray-50">
+            {lessons.map((l, idx) => lessonRow(l, idx))}
+          </ul>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sortedModules.map((module, mIdx) => {
+            const moduleLessons = lessons
+              .filter((l) => l.moduleId === module._id)
+              .sort((a, b) => a.order - b.order);
+            if (moduleLessons.length === 0) return null;
             return (
-              <li key={l._id}>
-                <Link
-                  href={`/courses/${courseId}/lessons/${l._id}`}
-                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${isCurrent ? "bg-gray-100" : "hover:bg-gray-50"}`}
-                >
-                  <span className="text-[11px] text-gray-400 w-4 flex-shrink-0">{idx + 1}</span>
-                  <span className={`flex-1 text-xs leading-snug line-clamp-2 ${isCurrent ? "font-semibold text-gray-800" : "text-gray-600"}`}>
-                    {l.title}
-                  </span>
-                  {isDone
-                    ? <CheckCircle2 size={13} className="text-gray-700 flex-shrink-0" />
-                    : isCurrent
-                      ? <ChevronRight size={13} className="text-gray-500 flex-shrink-0" />
-                      : <Circle size={13} className="text-gray-200 flex-shrink-0" />
-                  }
-                </Link>
-              </li>
+              <div key={module._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 border-b border-gray-50">
+                  Module {mIdx + 1}: {module.title}
+                </p>
+                <ul className="divide-y divide-gray-50">
+                  {moduleLessons.map((l, idx) => lessonRow(l, idx))}
+                </ul>
+              </div>
             );
           })}
-        </ul>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -537,6 +565,7 @@ export default function LessonPage({
 
   const [course, setCourse] = useState<Course | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [modules, setModules] = useState<CourseModule[]>([]);
   const [allLessons, setAllLessons] = useState<Lesson[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -554,12 +583,14 @@ export default function LessonPage({
     Promise.all([
       courseApi.getOne(courseId),
       courseApi.getLesson(courseId, lessonId),
+      courseApi.getModules(courseId).catch(() => [] as CourseModule[]),
       courseApi.getLessons(courseId),
       courseApi.getProgress(courseId).catch(() => null),
     ])
-      .then(([c, l, ls, p]) => {
+      .then(([c, l, ms, ls, p]) => {
         setCourse(c);
         setLesson(l);
+        setModules(ms);
         setAllLessons(ls);
         setProgress(p);
       })
@@ -876,6 +907,7 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
           <LessonSidebar
             courseId={courseId}
             currentLessonId={lessonId}
+            modules={modules}
             lessons={allLessons}
             completedIds={new Set(progress?.completedLessonIds ?? [])}
           />

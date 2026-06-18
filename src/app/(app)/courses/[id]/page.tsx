@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  courseApi, Course, Lesson, CourseProgress, COURSE_MODULES,
+  courseApi, Course, CourseModule, Lesson, CourseProgress, COURSE_LEVELS,
 } from "@/lib/api";
 import {
   ArrowLeft, BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle,
@@ -171,6 +171,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
 
   const [course, setCourse] = useState<Course | null>(null);
+  const [modules, setModules] = useState<CourseModule[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,11 +180,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     Promise.all([
       courseApi.getOne(id),
+      courseApi.getModules(id).catch(() => [] as CourseModule[]),
       courseApi.getLessons(id),
       courseApi.getProgress(id).catch(() => null),
     ])
-      .then(([c, ls, p]) => {
+      .then(([c, ms, ls, p]) => {
         setCourse(c);
+        setModules(ms);
         setLessons(ls);
         setProgress(p);
       })
@@ -208,8 +211,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     : 0;
   const totalDuration = lessons.reduce((sum, l) => sum + (l.durationSec ?? 0), 0);
 
-  const moduleLabel = COURSE_MODULES.find((m) => m.value === course.module)?.label ?? course.module;
-  const moduleBadge = MODULE_BADGE[course.module] ?? "bg-gray-100 text-gray-500";
+  const moduleLabel = COURSE_LEVELS.find((m) => m.value === course.level)?.label ?? course.level;
+  const moduleBadge = MODULE_BADGE[course.level] ?? "bg-gray-100 text-gray-500";
+
+  // Sorted modules, each with its lessons grouped underneath.
+  const sortedModules = [...modules].sort((a, b) => a.order - b.order);
 
   return (
     <div className="max-w-2xl">
@@ -278,14 +284,15 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {/* Lessons accordion */}
-      <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Lessons</h2>
+      {/* Modules → lessons */}
+      <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Modules</h2>
       {lessons.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center mb-8">
           <BookOpen size={30} className="text-gray-200 mb-2" />
           <p className="text-sm text-gray-400">No lessons added yet.</p>
         </div>
-      ) : (
+      ) : sortedModules.length === 0 ? (
+        // Fallback (no modules): show a flat lesson list.
         <div className="space-y-2 mb-8">
           {lessons.map((lesson, idx) => (
             <LessonAccordionItem
@@ -296,6 +303,41 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
               isComplete={completedIds.has(lesson._id)}
             />
           ))}
+        </div>
+      ) : (
+        <div className="space-y-6 mb-8">
+          {sortedModules.map((module, mIdx) => {
+            const moduleLessons = lessons
+              .filter((l) => l.moduleId === module._id)
+              .sort((a, b) => a.order - b.order);
+            return (
+              <div key={module._id}>
+                <div className="mb-2.5">
+                  <h3 className="text-sm font-bold text-gray-800">
+                    <span className="text-gray-400">Module {mIdx + 1}:</span> {module.title}
+                  </h3>
+                  {module.description && (
+                    <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{module.description}</p>
+                  )}
+                </div>
+                {moduleLessons.length === 0 ? (
+                  <p className="text-xs text-gray-300 pl-1 pb-2">No lessons in this module yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {moduleLessons.map((lesson, idx) => (
+                      <LessonAccordionItem
+                        key={lesson._id}
+                        lesson={lesson}
+                        index={idx}
+                        courseId={id}
+                        isComplete={completedIds.has(lesson._id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
