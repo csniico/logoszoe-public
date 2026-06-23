@@ -9,7 +9,7 @@ import {
 } from "@/lib/api";
 import {
   BookOpen, CheckCircle2, ChevronDown, Circle, Clock,
-  FileText, Mic2, Pause, Play,
+  FileText, Lock, Mic2, Pause, Play,
   ChevronRight,
   RotateCcw, RotateCw, Volume2, VolumeX,
 } from "lucide-react";
@@ -365,12 +365,14 @@ function LessonSidebar({
   modules,
   lessons,
   completedIds,
+  lockedIds,
 }: {
   courseId: string;
   currentLessonId: string;
   modules: CourseModule[];
   lessons: Lesson[];
   completedIds: Set<string>;
+  lockedIds: Set<string>;
 }) {
   const completed = completedIds.size;
   const total = lessons.length;
@@ -378,26 +380,49 @@ function LessonSidebar({
 
   const sortedModules = [...modules].sort((a, b) => a.order - b.order);
 
-  // Render one lesson row.
+  // Render one lesson row. Locked rows are not clickable.
   const lessonRow = (l: Lesson, idx: number) => {
     const isCurrent = l._id === currentLessonId;
     const isDone = completedIds.has(l._id);
+    const isLocked = lockedIds.has(l._id);
+
+    const inner = (
+      <>
+        <span className="text-[11px] text-gray-400 w-4 flex-shrink-0">{idx + 1}</span>
+        <span className={`flex-1 text-xs leading-snug line-clamp-2 ${isCurrent ? "font-semibold text-gray-800" : isLocked ? "text-gray-400" : "text-gray-600"}`}>
+          {l.title}
+        </span>
+        {isDone
+          ? <CheckCircle2 size={13} className="text-gray-700 flex-shrink-0" />
+          : isCurrent
+            ? <ChevronRight size={13} className="text-gray-500 flex-shrink-0" />
+            : isLocked
+              ? <Lock size={12} className="text-gray-300 flex-shrink-0" />
+              : <Circle size={13} className="text-gray-200 flex-shrink-0" />
+        }
+      </>
+    );
+
+    if (isLocked) {
+      return (
+        <li key={l._id}>
+          <div
+            title="Complete the previous lessons to unlock this one."
+            className="flex items-center gap-3 px-4 py-3 cursor-not-allowed"
+          >
+            {inner}
+          </div>
+        </li>
+      );
+    }
+
     return (
       <li key={l._id}>
         <Link
           href={`/courses/${courseId}/lessons/${l._id}`}
           className={`flex items-center gap-3 px-4 py-3 transition-colors ${isCurrent ? "bg-gray-100" : "hover:bg-gray-50"}`}
         >
-          <span className="text-[11px] text-gray-400 w-4 flex-shrink-0">{idx + 1}</span>
-          <span className={`flex-1 text-xs leading-snug line-clamp-2 ${isCurrent ? "font-semibold text-gray-800" : "text-gray-600"}`}>
-            {l.title}
-          </span>
-          {isDone
-            ? <CheckCircle2 size={13} className="text-gray-700 flex-shrink-0" />
-            : isCurrent
-              ? <ChevronRight size={13} className="text-gray-500 flex-shrink-0" />
-              : <Circle size={13} className="text-gray-200 flex-shrink-0" />
-          }
+          {inner}
         </Link>
       </li>
     );
@@ -430,7 +455,7 @@ function LessonSidebar({
         </div>
       ) : (
         <div className="space-y-3">
-          {sortedModules.map((module, mIdx) => {
+          {sortedModules.map((module) => {
             const moduleLessons = lessons
               .filter((l) => l.moduleId === module._id)
               .sort((a, b) => a.order - b.order);
@@ -438,7 +463,7 @@ function LessonSidebar({
             return (
               <div key={module._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 border-b border-gray-50">
-                  Module {mIdx + 1}: {module.title}
+                  {module.title}
                 </p>
                 <ul className="divide-y divide-gray-50">
                   {moduleLessons.map((l, idx) => lessonRow(l, idx))}
@@ -562,6 +587,7 @@ export default function LessonPage({
   params: Promise<{ id: string; lessonId: string }>;
 }) {
   const { id: courseId, lessonId } = use(params);
+  const router = useRouter();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -601,8 +627,35 @@ export default function LessonPage({
 const completedIds = new Set(progress?.completedLessonIds ?? []);
   const isAlreadyComplete = completedIds.has(lessonId);
 
-  const currentIndex = allLessons.findIndex((l) => l._id === lessonId);
-  const nextLesson = allLessons[currentIndex + 1] ?? null;
+  // Walk-order across modules (modules in order, lessons in order within each).
+  const sortedModules = [...modules].sort((a, b) => a.order - b.order);
+  const orderedLessons: Lesson[] = sortedModules.length > 0
+    ? sortedModules.flatMap((m) =>
+        allLessons.filter((l) => l.moduleId === m._id).sort((a, b) => a.order - b.order))
+    : [...allLessons].sort((a, b) => a.order - b.order);
+
+  // A lesson is locked until every lesson before it is completed.
+  const lockedIds = new Set<string>();
+  {
+    let prevAllComplete = true;
+    for (const l of orderedLessons) {
+      if (!prevAllComplete) lockedIds.add(l._id);
+      if (!completedIds.has(l._id)) prevAllComplete = false;
+    }
+  }
+
+  const currentIndex = orderedLessons.findIndex((l) => l._id === lessonId);
+  const nextLesson = orderedLessons[currentIndex + 1] ?? null;
+
+  // Gate direct access: if this lesson is locked (and we know progress for
+  // sure), bounce back to the course outline. Fails open if progress didn't
+  // load, so a transient error never traps the learner.
+  const currentLocked = lockedIds.has(lessonId);
+  useEffect(() => {
+    if (!loading && progress && currentLocked) {
+      router.replace(`/courses/${courseId}`);
+    }
+  }, [loading, progress, currentLocked, courseId, router]);
 
   async function handleMarkComplete() {
     if (completing || isAlreadyComplete) return;
@@ -694,6 +747,19 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
       <div className="text-center py-16">
         <BookOpen size={40} className="text-gray-200 mx-auto mb-3" />
         <p className="text-gray-400 text-sm">{error ?? "Lesson not found."}</p>
+      </div>
+    );
+  }
+
+  // Locked (and progress is known): show a placeholder while the redirect to
+  // the course outline fires, so locked content never flashes.
+  if (progress && currentLocked) {
+    return (
+      <div className="text-center py-16">
+        <Lock size={32} className="text-gray-200 mx-auto mb-3" />
+        <p className="text-gray-400 text-sm">
+          Complete the previous lessons first. Redirecting…
+        </p>
       </div>
     );
   }
@@ -909,7 +975,8 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
             currentLessonId={lessonId}
             modules={modules}
             lessons={allLessons}
-            completedIds={new Set(progress?.completedLessonIds ?? [])}
+            completedIds={completedIds}
+            lockedIds={lockedIds}
           />
         </aside>
       </div>
