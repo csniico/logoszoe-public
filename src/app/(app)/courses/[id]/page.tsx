@@ -3,11 +3,11 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  courseApi, Course, Lesson, CourseProgress, COURSE_MODULES,
+  courseApi, Course, CourseModule, Lesson, CourseProgress, COURSE_LEVELS,
 } from "@/lib/api";
 import {
-  ArrowLeft, BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle,
-  Clock, ExternalLink, FileText, GraduationCap, Mic2, PlayCircle,
+  ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronDown, ChevronRight,
+  Clock, FileText, GraduationCap, Lock, Mic2, PlayCircle,
 } from "lucide-react";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -76,89 +76,130 @@ function ContentSection({ title, children }: { title: string; children: React.Re
   );
 }
 
-// ── Lesson accordion item ─────────────────────────────────────────────────────
+// ── Lesson card ───────────────────────────────────────────────────────────────
+// A lesson renders as a single card labelled "Lesson N: Title" that opens the
+// lesson directly. It's locked (non-clickable) until every preceding lesson in
+// the course is completed.
 
-function LessonAccordionItem({
+function LessonCard({
   lesson,
   index,
   courseId,
   isComplete,
+  isLocked,
 }: {
   lesson: Lesson;
   index: number;
   courseId: string;
   isComplete: boolean;
+  isLocked: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const Icon = TYPE_ICON[lesson.type] ?? BookOpen;
+  const dur = formatDuration(lesson.durationSec);
+
+  const body = (
+    <div
+      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors ${
+        isLocked
+          ? "border-gray-100 bg-gray-50/60 cursor-not-allowed"
+          : "border-gray-100 bg-white hover:bg-gray-50 hover:border-gray-200"
+      }`}
+    >
+      <div className={`w-7 h-7 flex items-center justify-center flex-shrink-0 ${isLocked ? "text-gray-300" : "text-gray-500"}`}>
+        <Icon size={14} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium leading-snug ${isLocked || isComplete ? "text-gray-400" : "text-gray-800"}`}>
+          Lesson {index + 1}: {lesson.title}
+        </p>
+        <span className="text-[11px] text-gray-400">
+          {TYPE_LABEL[lesson.type]}{dur ? ` · ${dur}` : ""}
+        </span>
+      </div>
+
+      {isComplete ? (
+        <CheckCircle2 size={17} className="text-gray-700 flex-shrink-0" />
+      ) : isLocked ? (
+        <Lock size={15} className="text-gray-300 flex-shrink-0" />
+      ) : (
+        <ArrowRight size={17} className="text-gray-400 flex-shrink-0" />
+      )}
+    </div>
+  );
+
+  if (isLocked) {
+    return (
+      <div aria-disabled title="Complete the previous lessons to unlock this one.">
+        {body}
+      </div>
+    );
+  }
+
+  return <Link href={`/courses/${courseId}/lessons/${lesson._id}`}>{body}</Link>;
+}
+
+// ── Module accordion ──────────────────────────────────────────────────────────
+
+function ModuleAccordion({
+  module,
+  lessons,
+  courseId,
+  completedIds,
+  lockedIds,
+  defaultOpen,
+}: {
+  module: CourseModule;
+  lessons: Lesson[];
+  courseId: string;
+  completedIds: Set<string>;
+  lockedIds: Set<string>;
+  defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const done = lessons.filter((l) => completedIds.has(l._id)).length;
 
   return (
-    <div className={`border border-gray-100 rounded-xl overflow-hidden transition-all ${open ? "shadow-sm" : ""}`}>
-      {/* Header - always visible */}
+    <div className="border border-gray-100 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 bg-white hover:bg-gray-50 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-4 bg-white hover:bg-gray-50 transition-colors text-left"
       >
-        {/* Order */}
-        <span className="w-6 text-center text-xs font-medium text-gray-400 flex-shrink-0">
-          {index + 1}
-        </span>
-
-        {/* Type icon */}
-        <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 text-gray-500">
-          <Icon size={13} />
-        </div>
-
-        {/* Title + type */}
-        <div className="flex-1 min-w-0 text-left">
-          <p className={`text-sm font-medium leading-snug ${isComplete ? "text-gray-400" : "text-gray-800"}`}>
-            {lesson.title}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-800 leading-snug">
+            {module.title}
           </p>
-          <span className="text-[11px] text-gray-400">{TYPE_LABEL[lesson.type]}</span>
+          <span className="text-[11px] text-gray-400">
+            {done}/{lessons.length} lesson{lessons.length !== 1 ? "s" : ""} completed
+          </span>
         </div>
-
-        {/* Completion indicator */}
-        <div className="flex-shrink-0 mr-1">
-          {isComplete
-            ? <CheckCircle2 size={16} className="text-gray-700" />
-            : <Circle size={16} className="text-gray-200" />
-          }
-        </div>
-
-        {/* Chevron */}
         <ChevronDown
-          size={15}
+          size={16}
           className={`flex-shrink-0 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
 
-      {/* Expanded body */}
       {open && (
-        <div className="px-4 pb-4 pt-1 bg-white border-t border-gray-50">
-          {lesson.description && (
-            <p className="text-sm text-gray-500 leading-relaxed mb-3">{lesson.description}</p>
+        <div className="px-3 pb-3 pt-1 bg-gray-50/40 border-t border-gray-50">
+          {module.description && (
+            <p className="text-xs text-gray-400 leading-relaxed px-1 py-2">{module.description}</p>
           )}
-
-          <div className="flex items-center justify-between">
-            {/* Duration */}
-            <div>
-              {formatDuration(lesson.durationSec) ? (
-                <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <Clock size={11} /> {formatDuration(lesson.durationSec)}
-                </span>
-              ) : (
-                <span className="text-xs text-gray-300">-</span>
-              )}
+          {lessons.length === 0 ? (
+            <p className="text-xs text-gray-300 px-1 py-2">No lessons in this module yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {lessons.map((lesson, idx) => (
+                <LessonCard
+                  key={lesson._id}
+                  lesson={lesson}
+                  index={idx}
+                  courseId={courseId}
+                  isComplete={completedIds.has(lesson._id)}
+                  isLocked={lockedIds.has(lesson._id)}
+                />
+              ))}
             </div>
-
-            {/* Open lesson button */}
-            <Link
-              href={`/courses/${courseId}/lessons/${lesson._id}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-gray-300 bg-gray-100 text-gray-800 text-xs font-semibold hover:bg-gray-200 hover:border-gray-400 transition-colors"
-            >
-              Open lesson <ExternalLink size={11} />
-            </Link>
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -171,6 +212,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
 
   const [course, setCourse] = useState<Course | null>(null);
+  const [modules, setModules] = useState<CourseModule[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,11 +221,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     Promise.all([
       courseApi.getOne(id),
+      courseApi.getModules(id).catch(() => [] as CourseModule[]),
       courseApi.getLessons(id),
       courseApi.getProgress(id).catch(() => null),
     ])
-      .then(([c, ls, p]) => {
+      .then(([c, ms, ls, p]) => {
         setCourse(c);
+        setModules(ms);
         setLessons(ls);
         setProgress(p);
       })
@@ -208,8 +252,30 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     : 0;
   const totalDuration = lessons.reduce((sum, l) => sum + (l.durationSec ?? 0), 0);
 
-  const moduleLabel = COURSE_MODULES.find((m) => m.value === course.module)?.label ?? course.module;
-  const moduleBadge = MODULE_BADGE[course.module] ?? "bg-gray-100 text-gray-500";
+  const moduleLabel = COURSE_LEVELS.find((m) => m.value === course.level)?.label ?? course.level;
+  const moduleBadge = MODULE_BADGE[course.level] ?? "bg-gray-100 text-gray-500";
+
+  // Sorted modules, each with its lessons grouped underneath.
+  const sortedModules = [...modules].sort((a, b) => a.order - b.order);
+  const lessonsByModule = (moduleId: string) =>
+    lessons.filter((l) => l.moduleId === moduleId).sort((a, b) => a.order - b.order);
+
+  // Flatten lessons into the order a learner walks them (modules in order, then
+  // lessons in order). Used to enforce sequential unlocking.
+  const orderedLessons: Lesson[] = sortedModules.length > 0
+    ? sortedModules.flatMap((m) => lessonsByModule(m._id))
+    : [...lessons].sort((a, b) => a.order - b.order);
+
+  // A lesson is locked until EVERY lesson before it is completed. The first
+  // not-yet-completed lesson stays unlocked (it's the next one to do).
+  const lockedIds = new Set<string>();
+  {
+    let prevAllComplete = true;
+    for (const l of orderedLessons) {
+      if (!prevAllComplete) lockedIds.add(l._id);
+      if (!completedIds.has(l._id)) prevAllComplete = false;
+    }
+  }
 
   return (
     <div className="max-w-2xl">
@@ -278,22 +344,38 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {/* Lessons accordion */}
-      <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Lessons</h2>
+      {/* Modules (accordions) → lesson cards */}
+      <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Modules</h2>
       {lessons.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center mb-8">
           <BookOpen size={30} className="text-gray-200 mb-2" />
           <p className="text-sm text-gray-400">No lessons added yet.</p>
         </div>
-      ) : (
+      ) : sortedModules.length === 0 ? (
+        // Fallback (no modules): a flat list of lesson cards with the same lock rules.
         <div className="space-y-2 mb-8">
-          {lessons.map((lesson, idx) => (
-            <LessonAccordionItem
+          {orderedLessons.map((lesson, idx) => (
+            <LessonCard
               key={lesson._id}
               lesson={lesson}
               index={idx}
               courseId={id}
               isComplete={completedIds.has(lesson._id)}
+              isLocked={lockedIds.has(lesson._id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3 mb-8">
+          {sortedModules.map((module) => (
+            <ModuleAccordion
+              key={module._id}
+              module={module}
+              lessons={lessonsByModule(module._id)}
+              courseId={id}
+              completedIds={completedIds}
+              lockedIds={lockedIds}
+              defaultOpen={false}
             />
           ))}
         </div>

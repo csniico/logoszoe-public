@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { courseApi, Course, CourseProgress, COURSE_MODULES, CourseModule } from "@/lib/api";
+import { courseApi, Course, CourseProgress, COURSE_LEVELS, CourseLevel } from "@/lib/api";
 import { GraduationCap } from "lucide-react";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -15,14 +15,14 @@ function formatDuration(sec?: number) {
   return `${m}m`;
 }
 
-const MODULE_COLORS: Record<CourseModule, string> = {
+const MODULE_COLORS: Record<CourseLevel, string> = {
   foundation:   "bg-emerald-50 text-emerald-700 border-emerald-100",
   intermediate: "bg-amber-50 text-amber-700 border-amber-100",
   advanced:     "bg-rose-50 text-rose-700 border-rose-100",
 };
 
 type FilterStatus = "all" | "progress" | "not-started" | "completed";
-type FilterModule = "all" | CourseModule;
+type FilterModule = "all" | CourseLevel;
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -59,8 +59,8 @@ function CourseCard({ course, progress }: { course: Course; progress?: CoursePro
   const dur = formatDuration(course.totalDurationSec);
   if (dur) metaParts.push(dur);
 
-  const moduleLabel = COURSE_MODULES.find((m) => m.value === course.module)?.label ?? course.module;
-  const moduleBadgeClass = MODULE_COLORS[course.module] ?? "bg-gray-100 text-gray-500 border-gray-100";
+  const moduleLabel = COURSE_LEVELS.find((m) => m.value === course.level)?.label ?? course.level;
+  const moduleBadgeClass = MODULE_COLORS[course.level] ?? "bg-gray-100 text-gray-500 border-gray-100";
 
   return (
     <Link
@@ -159,8 +159,8 @@ const STATUS_PILLS: { value: FilterStatus; label: string }[] = [
 ];
 
 const MODULE_PILLS: { value: FilterModule; label: string }[] = [
-  { value: "all",          label: "All Modules"  },
-  ...COURSE_MODULES.map((m) => ({ value: m.value as FilterModule, label: m.label })),
+  { value: "all",          label: "All Levels"  },
+  ...COURSE_LEVELS.map((m) => ({ value: m.value as FilterModule, label: m.label })),
 ];
 
 export default function CoursesPage() {
@@ -189,8 +189,8 @@ export default function CoursesPage() {
   }, []);
 
   const filteredCourses = courses.filter((c) => {
-    // Module filter
-    if (moduleFilter !== "all" && c.module !== moduleFilter) return false;
+    // Level filter
+    if (moduleFilter !== "all" && c.level !== moduleFilter) return false;
     // Status filter
     const p = progressMap[c._id];
     const lessonsCompleted = p?.lessonsCompleted ?? 0;

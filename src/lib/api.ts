@@ -462,9 +462,9 @@ export const bookmarkApi = {
 
 // ── Course types + endpoints ──────────────────────────────────────────────────
 
-export type CourseModule = "foundation" | "intermediate" | "advanced";
+export type CourseLevel = "foundation" | "intermediate" | "advanced";
 
-export const COURSE_MODULES: { value: CourseModule; label: string }[] = [
+export const COURSE_LEVELS: { value: CourseLevel; label: string }[] = [
   { value: "foundation",   label: "Foundation"   },
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced",     label: "Advanced"     },
@@ -477,7 +477,7 @@ export interface EmbeddedQuestion {
 export interface Course {
   _id: string;
   title: string;
-  module: CourseModule;
+  level: CourseLevel;
   imageUrl?: string;
   imageKey?: string;
   description?: string;
@@ -486,11 +486,23 @@ export interface Course {
   createdAt?: string;
 }
 
+/** A bundle of lessons within a course (Course → Module → Lesson). */
+export interface CourseModule {
+  _id: string;
+  courseId: string;
+  title: string;
+  order: number;
+  description?: string;
+  imageUrl?: string;
+  lessonCount?: number;
+}
+
 export type LessonType = "text" | "video" | "audio";
 
 export interface Lesson {
   _id: string;
   courseId: string;
+  moduleId?: string;
   order: number;
   title: string;
   type: LessonType;
@@ -530,7 +542,11 @@ export const courseApi = {
   getOne(id: string) {
     return apiFetch<Course>(`/courses/${id}`);
   },
-  /** GET /courses/:id/lessons */
+  /** GET /courses/:id/modules */
+  getModules(id: string) {
+    return apiFetch<CourseModule[]>(`/courses/${id}/modules`);
+  },
+  /** GET /courses/:id/lessons (all lessons across modules; group by moduleId) */
   getLessons(id: string) {
     return apiFetch<Lesson[]>(`/courses/${id}/lessons`);
   },
