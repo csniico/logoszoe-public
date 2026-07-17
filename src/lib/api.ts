@@ -525,11 +525,29 @@ export interface CourseVideo {
   durationSec?: number;
 }
 
+/**
+ * Per-lesson lock/completion state, as decided by the backend. This is the
+ * source of truth for the lesson gate — the client must NOT recompute unlock
+ * state from `completedLessonIds` or lesson order. Entries are returned in full
+ * course sequence order (module order, then lesson order).
+ */
+export interface LessonProgress {
+  lessonId: string;
+  /** May be null for legacy lessons that predate modules. */
+  moduleId: string | null;
+  order: number;
+  completed: boolean;
+  unlocked: boolean;
+}
+
 export interface CourseProgress {
   courseId: string;
   totalLessons: number;
   lessonsCompleted: number;
   completedLessonIds: string[];
+  /** Per-lesson lock/completion flags. Optional for resilience if an older
+   *  backend response is ever received, but the current API always sends it. */
+  lessons?: LessonProgress[];
 }
 
 
@@ -550,7 +568,13 @@ export const courseApi = {
   getLessons(id: string) {
     return apiFetch<Lesson[]>(`/courses/${id}/lessons`);
   },
-  /** GET /courses/:id/lessons/:lessonId */
+  /**
+   * GET /courses/:id/lessons/:lessonId  [requires auth]
+   * The backend enforces the sequential lock: it returns 403 when the lesson is
+   * locked (previous lesson not completed). The auth token is attached by
+   * apiFetch automatically. Callers should only reach here for lessons whose
+   * `unlocked` flag from /progress is true; the 403 is the server-side backstop.
+   */
   getLesson(id: string, lessonId: string) {
     return apiFetch<Lesson>(`/courses/${id}/lessons/${lessonId}`);
   },
@@ -558,7 +582,8 @@ export const courseApi = {
   getProgress(id: string) {
     return apiFetch<CourseProgress>(`/courses/${id}/progress`);
   },
-  /** POST /courses/:id/lessons/:lessonId/complete  [requires auth] */
+  /** POST /courses/:id/lessons/:lessonId/complete  [requires auth]
+   *  The backend rejects this with 403 if the lesson is locked. */
   markComplete(id: string, lessonId: string) {
     return apiFetch<void>(`/courses/${id}/lessons/${lessonId}/complete`, { method: "POST" });
   },

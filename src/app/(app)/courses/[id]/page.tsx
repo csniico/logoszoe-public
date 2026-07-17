@@ -6,8 +6,8 @@ import {
   courseApi, Course, CourseModule, Lesson, CourseProgress, COURSE_LEVELS,
 } from "@/lib/api";
 import {
-  ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronDown, ChevronRight,
-  Clock, FileText, GraduationCap, Lock, Mic2, PlayCircle,
+  ArrowLeft, BookOpen, CheckCircle2, ChevronDown, ChevronRight,
+  Clock, FileText, GraduationCap, Lock, LockOpen, Mic2, PlayCircle,
 } from "lucide-react";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -78,24 +78,28 @@ function ContentSection({ title, children }: { title: string; children: React.Re
 
 // ── Lesson card ───────────────────────────────────────────────────────────────
 // A lesson renders as a single card labelled "Lesson N: Title" that opens the
-// lesson directly. It's locked (non-clickable) until every preceding lesson in
-// the course is completed.
+// lesson directly. Lock/completion state comes straight from the backend
+// (`/progress` → `lessons[]`); the client never decides it. A locked lesson is
+// non-clickable and never navigates into the lesson. The completion indicator is
+// a plain (non-interactive) green check — there is no way to mark a lesson
+// complete from here.
 
 function LessonCard({
   lesson,
   index,
   courseId,
-  isComplete,
-  isLocked,
+  completed,
+  unlocked,
 }: {
   lesson: Lesson;
   index: number;
   courseId: string;
-  isComplete: boolean;
-  isLocked: boolean;
+  completed: boolean;
+  unlocked: boolean;
 }) {
   const Icon = TYPE_ICON[lesson.type] ?? BookOpen;
   const dur = formatDuration(lesson.durationSec);
+  const isLocked = !unlocked;
 
   const body = (
     <div
@@ -110,7 +114,7 @@ function LessonCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium leading-snug ${isLocked || isComplete ? "text-gray-400" : "text-gray-800"}`}>
+        <p className={`text-sm font-medium leading-snug ${isLocked ? "text-gray-400" : completed ? "text-gray-500" : "text-gray-800"}`}>
           Lesson {index + 1}: {lesson.title}
         </p>
         <span className="text-[11px] text-gray-400">
@@ -118,16 +122,17 @@ function LessonCard({
         </span>
       </div>
 
-      {isComplete ? (
-        <CheckCircle2 size={17} className="text-gray-700 flex-shrink-0" />
-      ) : isLocked ? (
-        <Lock size={15} className="text-gray-300 flex-shrink-0" />
+      {completed ? (
+        <CheckCircle2 size={17} className="text-emerald-600 flex-shrink-0" aria-label="Completed" />
+      ) : unlocked ? (
+        <LockOpen size={15} className="text-gray-500 flex-shrink-0" aria-label="Unlocked" />
       ) : (
-        <ArrowRight size={17} className="text-gray-400 flex-shrink-0" />
+        <Lock size={15} className="text-gray-300 flex-shrink-0" aria-label="Locked" />
       )}
     </div>
   );
 
+  // Locked lessons are inert: no link, no navigation.
   if (isLocked) {
     return (
       <div aria-disabled title="Complete the previous lessons to unlock this one.">
@@ -146,14 +151,14 @@ function ModuleAccordion({
   lessons,
   courseId,
   completedIds,
-  lockedIds,
+  unlockedIds,
   defaultOpen,
 }: {
   module: CourseModule;
   lessons: Lesson[];
   courseId: string;
   completedIds: Set<string>;
-  lockedIds: Set<string>;
+  unlockedIds: Set<string>;
   defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -194,8 +199,8 @@ function ModuleAccordion({
                   lesson={lesson}
                   index={idx}
                   courseId={courseId}
-                  isComplete={completedIds.has(lesson._id)}
-                  isLocked={lockedIds.has(lesson._id)}
+                  completed={completedIds.has(lesson._id)}
+                  unlocked={unlockedIds.has(lesson._id)}
                 />
               ))}
             </div>
@@ -246,7 +251,16 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  const completedIds = new Set(progress?.completedLessonIds ?? []);
+  // Lock/completion state is decided by the backend and delivered per-lesson in
+  // `progress.lessons`. We never recompute it from `completedLessonIds` or lesson
+  // order. Lessons without an entry (e.g. progress failed to load) default to
+  // locked — the server enforces the gate regardless.
+  const completedIds = new Set(
+    (progress?.lessons ?? []).filter((l) => l.completed).map((l) => l.lessonId),
+  );
+  const unlockedIds = new Set(
+    (progress?.lessons ?? []).filter((l) => l.unlocked).map((l) => l.lessonId),
+  );
   const pct = progress && progress.totalLessons > 0
     ? Math.round((progress.lessonsCompleted / progress.totalLessons) * 100)
     : 0;
@@ -260,22 +274,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   const lessonsByModule = (moduleId: string) =>
     lessons.filter((l) => l.moduleId === moduleId).sort((a, b) => a.order - b.order);
 
-  // Flatten lessons into the order a learner walks them (modules in order, then
-  // lessons in order). Used to enforce sequential unlocking.
+  // Display ordering only (modules in order, then lessons in order) for the
+  // no-modules fallback list. Lock state still comes from the server flags.
   const orderedLessons: Lesson[] = sortedModules.length > 0
     ? sortedModules.flatMap((m) => lessonsByModule(m._id))
     : [...lessons].sort((a, b) => a.order - b.order);
-
-  // A lesson is locked until EVERY lesson before it is completed. The first
-  // not-yet-completed lesson stays unlocked (it's the next one to do).
-  const lockedIds = new Set<string>();
-  {
-    let prevAllComplete = true;
-    for (const l of orderedLessons) {
-      if (!prevAllComplete) lockedIds.add(l._id);
-      if (!completedIds.has(l._id)) prevAllComplete = false;
-    }
-  }
 
   return (
     <div className="max-w-2xl">
@@ -360,8 +363,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
               lesson={lesson}
               index={idx}
               courseId={id}
-              isComplete={completedIds.has(lesson._id)}
-              isLocked={lockedIds.has(lesson._id)}
+              completed={completedIds.has(lesson._id)}
+              unlocked={unlockedIds.has(lesson._id)}
             />
           ))}
         </div>
@@ -374,7 +377,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
               lessons={lessonsByModule(module._id)}
               courseId={id}
               completedIds={completedIds}
-              lockedIds={lockedIds}
+              unlockedIds={unlockedIds}
               defaultOpen={false}
             />
           ))}
@@ -384,7 +387,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
 
       {/* "Continue" CTA if in progress */}
       {progress && progress.lessonsCompleted > 0 && pct < 100 && (() => {
-        const nextLesson = lessons.find((l) => !completedIds.has(l._id));
+        // The next actionable lesson is the first unlocked-but-not-completed one.
+        const nextLesson = orderedLessons.find(
+          (l) => unlockedIds.has(l._id) && !completedIds.has(l._id),
+        );
         if (!nextLesson) return null;
         return (
           <div className="mt-2 mb-8 p-4 bg-white rounded-xl border border-gray-100 flex items-center gap-4">
