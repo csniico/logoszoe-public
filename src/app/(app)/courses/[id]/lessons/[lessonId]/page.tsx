@@ -4,7 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  courseApi, courseVideoApi,
+  courseApi, courseVideoApi, ApiError,
   CourseVideo, Course, CourseModule, Lesson, CourseProgress,
 } from "@/lib/api";
 import {
@@ -365,14 +365,14 @@ function LessonSidebar({
   modules,
   lessons,
   completedIds,
-  lockedIds,
+  unlockedIds,
 }: {
   courseId: string;
   currentLessonId: string;
   modules: CourseModule[];
   lessons: Lesson[];
   completedIds: Set<string>;
-  lockedIds: Set<string>;
+  unlockedIds: Set<string>;
 }) {
   const completed = completedIds.size;
   const total = lessons.length;
@@ -384,7 +384,7 @@ function LessonSidebar({
   const lessonRow = (l: Lesson, idx: number) => {
     const isCurrent = l._id === currentLessonId;
     const isDone = completedIds.has(l._id);
-    const isLocked = lockedIds.has(l._id);
+    const isLocked = !unlockedIds.has(l._id);
 
     const inner = (
       <>
@@ -596,6 +596,9 @@ export default function LessonPage({
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Server-side backstop: the lesson fetch returns 403 when the lesson is locked.
+  const [locked, setLocked] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
 
   const [studyAnswers, setStudyAnswers] = useState<Record<number, string>>({});
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<number, string>>({});
@@ -606,60 +609,91 @@ export default function LessonPage({
   const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      courseApi.getOne(courseId),
-      courseApi.getLesson(courseId, lessonId),
-      courseApi.getModules(courseId).catch(() => [] as CourseModule[]),
-      courseApi.getLessons(courseId),
-      courseApi.getProgress(courseId).catch(() => null),
-    ])
-      .then(([c, l, ms, ls, p]) => {
+    let cancelled = false;
+
+    (async () => {
+      // Reset per-lesson state when navigating between lessons (the route param
+      // changes without remounting this component).
+      setLoading(true);
+      setError(null);
+      setLocked(false);
+      setCompleteError(null);
+      try {
+        // Course, modules, lessons and progress load regardless of the lock so
+        // the outline/sidebar can still render even if the lesson body is gated.
+        const [c, ms, ls, p] = await Promise.all([
+          courseApi.getOne(courseId),
+          courseApi.getModules(courseId).catch(() => [] as CourseModule[]),
+          courseApi.getLessons(courseId),
+          courseApi.getProgress(courseId).catch(() => null),
+        ]);
+        if (cancelled) return;
         setCourse(c);
-        setLesson(l);
         setModules(ms);
         setAllLessons(ls);
         setProgress(p);
-      })
-      .catch(() => setError("Lesson not found."))
-      .finally(() => setLoading(false));
+
+        // The lesson body is auth-gated and lock-enforced server-side: a 403
+        // means the lesson is locked. Keep the user out and show the locked
+        // state rather than a crash/error screen.
+        try {
+          const l = await courseApi.getLesson(courseId, lessonId);
+          if (!cancelled) setLesson(l);
+        } catch (e) {
+          if (e instanceof ApiError && e.status === 403) {
+            if (!cancelled) setLocked(true);
+          } else {
+            throw e;
+          }
+        }
+      } catch {
+        if (!cancelled) setError("Lesson not found.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [courseId, lessonId]);
 
-const completedIds = new Set(progress?.completedLessonIds ?? []);
+  // Lock/completion state comes straight from the backend (`progress.lessons`).
+  // We never recompute it from `completedLessonIds` or lesson order.
+  const completedIds = new Set(
+    (progress?.lessons ?? []).filter((l) => l.completed).map((l) => l.lessonId),
+  );
+  const unlockedIds = new Set(
+    (progress?.lessons ?? []).filter((l) => l.unlocked).map((l) => l.lessonId),
+  );
   const isAlreadyComplete = completedIds.has(lessonId);
 
-  // Walk-order across modules (modules in order, lessons in order within each).
+  // Display ordering only (modules in order, lessons in order within each), used
+  // to pick the "up next" lesson. Not used for lock decisions.
   const sortedModules = [...modules].sort((a, b) => a.order - b.order);
   const orderedLessons: Lesson[] = sortedModules.length > 0
     ? sortedModules.flatMap((m) =>
         allLessons.filter((l) => l.moduleId === m._id).sort((a, b) => a.order - b.order))
     : [...allLessons].sort((a, b) => a.order - b.order);
 
-  // A lesson is locked until every lesson before it is completed.
-  const lockedIds = new Set<string>();
-  {
-    let prevAllComplete = true;
-    for (const l of orderedLessons) {
-      if (!prevAllComplete) lockedIds.add(l._id);
-      if (!completedIds.has(l._id)) prevAllComplete = false;
-    }
-  }
-
   const currentIndex = orderedLessons.findIndex((l) => l._id === lessonId);
   const nextLesson = orderedLessons[currentIndex + 1] ?? null;
 
-  // Gate direct access: if this lesson is locked (and we know progress for
-  // sure), bounce back to the course outline. Fails open if progress didn't
-  // load, so a transient error never traps the learner.
-  const currentLocked = lockedIds.has(lessonId);
+  // This lesson is locked when the server said so (403 → `locked`) or when
+  // progress loaded and its `unlocked` flag is false. Fails open if progress
+  // didn't load at all, so a transient error never traps the learner — the 403
+  // backstop still applies in that case.
+  const currentLocked = locked || (!!progress && !unlockedIds.has(lessonId));
+
+  // Gate direct access: bounce a locked lesson back to the course outline.
   useEffect(() => {
-    if (!loading && progress && currentLocked) {
+    if (!loading && currentLocked) {
       router.replace(`/courses/${courseId}`);
     }
-  }, [loading, progress, currentLocked, courseId, router]);
+  }, [loading, currentLocked, courseId, router]);
 
   async function handleMarkComplete() {
     if (completing || isAlreadyComplete) return;
     setCompleting(true);
+    setCompleteError(null);
     try {
       // Build response payload from study + reflection answers
       const responses = [
@@ -685,17 +719,29 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
         courseApi.markComplete(courseId, lessonId),
       ]);
 
-      setProgress((p) => ({
-        courseId,
-        totalLessons: p?.totalLessons ?? allLessons.length,
-        lessonsCompleted: (p?.lessonsCompleted ?? 0) + 1,
-        completedLessonIds: [...(p?.completedLessonIds ?? []), lessonId],
-      }));
+      // Re-fetch progress — it's the source of truth for completion + which
+      // lesson is now unlocked. Fall back to an optimistic bump if it fails.
+      const fresh = await courseApi.getProgress(courseId).catch(() => null);
+      setProgress((p) =>
+        fresh ?? {
+          courseId,
+          totalLessons: p?.totalLessons ?? allLessons.length,
+          lessonsCompleted: (p?.lessonsCompleted ?? 0) + 1,
+          completedLessonIds: [...(p?.completedLessonIds ?? []), lessonId],
+          lessons: p?.lessons,
+        },
+      );
       // Brief "success flash" on the button before the countdown opens
       setJustCompleted(true);
       setTimeout(() => setShowCountdown(true), 650);
-    } catch {
-      // silent
+    } catch (e) {
+      // Server-side backstop: completion is rejected with 403 if the lesson is
+      // locked. Surface it instead of failing silently.
+      if (e instanceof ApiError && e.status === 403) {
+        setCompleteError("This lesson is locked. Complete the previous lesson first.");
+      } else {
+        setCompleteError("Something went wrong. Please try again.");
+      }
     } finally {
       setCompleting(false);
     }
@@ -708,13 +754,18 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
       await courseApi.unmarkComplete(courseId, lessonId);
       // deleteSubmission is best-effort; never let it block the UI reset
       courseApi.deleteSubmission(courseId, lessonId).catch(() => {});
-      // Update local state immediately
-      setProgress((p) => ({
-        courseId,
-        totalLessons: p?.totalLessons ?? allLessons.length,
-        lessonsCompleted: Math.max(0, (p?.lessonsCompleted ?? 1) - 1),
-        completedLessonIds: (p?.completedLessonIds ?? []).filter((id) => id !== lessonId),
-      }));
+      // Re-fetch progress (source of truth for completion + lock flags). Fall
+      // back to an optimistic decrement if the re-fetch fails.
+      const fresh = await courseApi.getProgress(courseId).catch(() => null);
+      setProgress((p) =>
+        fresh ?? {
+          courseId,
+          totalLessons: p?.totalLessons ?? allLessons.length,
+          lessonsCompleted: Math.max(0, (p?.lessonsCompleted ?? 1) - 1),
+          completedLessonIds: (p?.completedLessonIds ?? []).filter((id) => id !== lessonId),
+          lessons: p?.lessons,
+        },
+      );
       setJustCompleted(false);
       setStudyAnswers({});
       setReflectionAnswers({});
@@ -742,24 +793,33 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
     );
   }
 
+  // Locked: either the server returned 403 (lesson body never loaded) or
+  // progress says this lesson isn't unlocked. Show a "complete the previous
+  // lesson first" state — never the lesson content, never an error/crash. The
+  // redirect to the course outline fires from the effect above. This must come
+  // before the not-found guard, because on a 403 `lesson` is intentionally null.
+  if (currentLocked) {
+    return (
+      <div className="text-center py-16">
+        <Lock size={32} className="text-gray-200 mx-auto mb-3" />
+        <p className="text-gray-400 text-sm mb-4">
+          Complete the previous lesson first to unlock this one.
+        </p>
+        <Link
+          href={`/courses/${courseId}`}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+        >
+          Back to course
+        </Link>
+      </div>
+    );
+  }
+
   if (error || !lesson || !course) {
     return (
       <div className="text-center py-16">
         <BookOpen size={40} className="text-gray-200 mx-auto mb-3" />
         <p className="text-gray-400 text-sm">{error ?? "Lesson not found."}</p>
-      </div>
-    );
-  }
-
-  // Locked (and progress is known): show a placeholder while the redirect to
-  // the course outline fires, so locked content never flashes.
-  if (progress && currentLocked) {
-    return (
-      <div className="text-center py-16">
-        <Lock size={32} className="text-gray-200 mx-auto mb-3" />
-        <p className="text-gray-400 text-sm">
-          Complete the previous lessons first. Redirecting…
-        </p>
       </div>
     );
   }
@@ -922,6 +982,11 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
               </p>
             )}
 
+            {/* Completion error (e.g. server rejected a locked lesson with 403) */}
+            {completeError && !completing && (
+              <p className="text-xs text-red-500">{completeError}</p>
+            )}
+
             {/* Reset link - only once completed */}
             {isAlreadyComplete && !showResetConfirm && (
               <button
@@ -976,7 +1041,7 @@ const completedIds = new Set(progress?.completedLessonIds ?? []);
             modules={modules}
             lessons={allLessons}
             completedIds={completedIds}
-            lockedIds={lockedIds}
+            unlockedIds={unlockedIds}
           />
         </aside>
       </div>
