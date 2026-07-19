@@ -679,7 +679,7 @@ export default function LessonPage({
 
   // This lesson is locked when the server said so (403 → `locked`) or when
   // progress loaded and its `unlocked` flag is false. Fails open if progress
-  // didn't load at all, so a transient error never traps the learner — the 403
+  // didn't load at all, so a transient error never traps the learner - the 403
   // backstop still applies in that case.
   const currentLocked = locked || (!!progress && !unlockedIds.has(lessonId));
 
@@ -719,7 +719,7 @@ export default function LessonPage({
         courseApi.markComplete(courseId, lessonId),
       ]);
 
-      // Re-fetch progress — it's the source of truth for completion + which
+      // Re-fetch progress - it's the source of truth for completion + which
       // lesson is now unlocked. Fall back to an optimistic bump if it fails.
       const fresh = await courseApi.getProgress(courseId).catch(() => null);
       setProgress((p) =>
@@ -795,7 +795,7 @@ export default function LessonPage({
 
   // Locked: either the server returned 403 (lesson body never loaded) or
   // progress says this lesson isn't unlocked. Show a "complete the previous
-  // lesson first" state — never the lesson content, never an error/crash. The
+  // lesson first" state - never the lesson content, never an error/crash. The
   // redirect to the course outline fires from the effect above. This must come
   // before the not-found guard, because on a 403 `lesson` is intentionally null.
   if (currentLocked) {

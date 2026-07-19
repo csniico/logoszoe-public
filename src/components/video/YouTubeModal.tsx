@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { X } from "lucide-react";
 
 /**
- * Plays a YouTube video INLINE (embedded) so the user never leaves the app —
+ * Plays a YouTube video INLINE (embedded) so the user never leaves the app -
  * keeps YouTube's own player/controls for ToS compliance. `playsinline=1`
  * keeps it in-page on iOS Safari (mobile web).
  */

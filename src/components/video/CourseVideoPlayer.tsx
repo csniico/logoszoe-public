@@ -31,7 +31,7 @@ const THUMB =
 
 /**
  * Custom-controls HTML5 player for uploaded course videos. (YouTube/Vimeo keep
- * their own embedded players for ToS compliance — this is for direct files.)
+ * their own embedded players for ToS compliance - this is for direct files.)
  */
 export function CourseVideoPlayer({ src, poster }: { src: string; poster?: string }) {
   const wrapRef = useRef<HTMLDivElement>(null);

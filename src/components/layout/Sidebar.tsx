@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, obfuscateEmail } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { categoryApi, Category, streakApi, videoApi } from "@/lib/api";
 import {
@@ -548,7 +548,7 @@ export function MobileHeader() {
                 <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-primary-100 shadow-lg py-1 z-50">
                   <div className="px-4 py-3 border-b border-primary-50">
                     <p className="text-sm font-semibold text-primary-900 truncate">{displayName}</p>
-                    <p className="text-xs text-neutral-400 truncate">{user?.email ?? ""}</p>
+                    <p className="text-xs text-neutral-400 truncate">{obfuscateEmail(user?.email)}</p>
                   </div>
                   <Link
                     href="/profile"

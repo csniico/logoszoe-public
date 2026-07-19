@@ -11,14 +11,15 @@ import {
   Sparkles,
   ChevronDown,
   CreditCard,
-  Smartphone,
   X,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { donationApi, Donation, DonationCategory } from "@/lib/api";
 import { DONATION_CAUSES, causeTitleForProduct, DonationCause } from "@/lib/donation-catalog";
 import { DONATION_FAQ } from "@/lib/donation-faq";
-import { purchaseDonation, PurchaseCancelledError } from "@/lib/revenuecat";
+// Card payments (RevenueCat + Stripe) are disabled for now — Paystack handles
+// all channels. Kept commented for quick re-enable.
+// import { purchaseDonation, PurchaseCancelledError } from "@/lib/revenuecat";
 import { resumePaystack } from "@/lib/paystack";
 
 function formatAmount(amount?: number, currency?: string): string {
@@ -85,7 +86,8 @@ export function DonationsClient({
     return () => clearTimeout(t);
   }, [toast]);
 
-  // ── Card (RevenueCat) ──────────────────────────────────────────────────────
+  // ── Card (RevenueCat + Stripe) — disabled for now, kept for quick re-enable ──
+  /*
   async function handleCard(cause: DonationCause) {
     if (!rcApiKey || !user || processing) return;
     setSheetCause(null);
@@ -126,8 +128,9 @@ export function DonationsClient({
       setProcessing(null);
     }
   }
+  */
 
-  // ── Mobile Money (Paystack) ────────────────────────────────────────────────
+  // ── Payment (Paystack — card, mobile money & more) ──────────────────────────
   async function handleMomo(cause: DonationCause, amountMajor: number) {
     if (!user || processing) return;
     setSheetCause(null);
@@ -142,18 +145,18 @@ export function DonationsClient({
             .then((created) => setHistory((h) => [created, ...h.filter((d) => d._id !== created._id)]))
             .catch(() => {})
             .finally(() => {
-              setToast({ kind: "success", message: "Thank you! Your Mobile Money donation was received." });
+              setToast({ kind: "success", message: "Thank you! Your donation was received." });
               setProcessing(null);
             });
         },
         onCancel: () => setProcessing(null),
         onError: () => {
-          setToast({ kind: "error", message: "Mobile Money payment failed. Please try again." });
+          setToast({ kind: "error", message: "Payment failed. Please try again." });
           setProcessing(null);
         },
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not start Mobile Money payment.";
+      const msg = e instanceof Error ? e.message : "Could not start payment.";
       setToast({ kind: "error", message: msg });
       setProcessing(null);
     }
@@ -358,11 +361,8 @@ export function DonationsClient({
         <DonateSheet
           cause={sheetCause}
           mode={tab}
-          cardEnabled={cardEnabled}
-          momoEnabled={momoEnabled}
           onClose={() => setSheetCause(null)}
-          onCard={() => handleCard(sheetCause)}
-          onMomo={(amount) => handleMomo(sheetCause, amount)}
+          onPay={(amount) => handleMomo(sheetCause, amount)}
         />
       )}
     </div>
@@ -374,21 +374,18 @@ export function DonationsClient({
 function DonateSheet({
   cause,
   mode,
-  cardEnabled,
-  momoEnabled,
   onClose,
-  onCard,
-  onMomo,
+  onPay,
 }: {
   cause: DonationCause;
   mode: DonationCategory;
-  cardEnabled: boolean;
-  momoEnabled: boolean;
   onClose: () => void;
-  onCard: () => void;
-  onMomo: (amountMajor: number) => void;
+  onPay: (amountMajor: number) => void;
 }) {
-  const [stage, setStage] = useState<"choose" | "momo">("choose");
+  // "choose" shows a single entry action; "amount" collects the gift amount.
+  // (The card-vs-Mobile-Money chooser was removed — Paystack now handles every
+  // channel, so there's one payment path.)
+  const [stage, setStage] = useState<"choose" | "amount">("choose");
   const [amount, setAmount] = useState("");
 
   const amountNum = parseFloat(amount);
@@ -416,34 +413,18 @@ function DonateSheet({
 
         {stage === "choose" ? (
           <div className="space-y-2.5">
-            {cardEnabled && (
-              <button
-                onClick={onCard}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/40 transition-colors text-left"
-              >
-                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <CreditCard size={17} className="text-primary-700" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-gray-800">Pay with Card</span>
-                  <span className="block text-xs text-gray-400">Debit or credit card</span>
-                </span>
-              </button>
-            )}
-            {momoEnabled && (
-              <button
-                onClick={() => setStage("momo")}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/40 transition-colors text-left"
-              >
-                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Smartphone size={17} className="text-gold-600" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-gray-800">Pay with Mobile Money</span>
-                  <span className="block text-xs text-gray-400">MTN, Vodafone, AirtelTigo</span>
-                </span>
-              </button>
-            )}
+            <button
+              onClick={() => setStage("amount")}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/40 transition-colors text-left"
+            >
+              <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
+                <CreditCard size={17} className="text-primary-700" />
+              </span>
+              <span className="flex-1">
+                <span className="block text-sm font-semibold text-gray-800">Continue to make payment</span>
+                <span className="block text-xs text-gray-400">Card, Mobile Money &amp; more</span>
+              </span>
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -466,11 +447,11 @@ function DonateSheet({
                 Back
               </button>
               <button
-                onClick={() => amountValid && onMomo(amountNum)}
+                onClick={() => amountValid && onPay(amountNum)}
                 disabled={!amountValid}
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Smartphone size={15} />
+                <CreditCard size={15} />
                 {amountValid ? `Pay GH₵${amountNum.toFixed(2)}` : "Enter amount"}
               </button>
             </div>
