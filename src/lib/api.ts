@@ -154,6 +154,15 @@ export const authApi = {
     });
   },
 
+  /**
+   * POST /auth/guest - signs in with the shared guest account. Credentials live
+   * server-side (GUEST_EMAIL / GUEST_PASSWORD); the Next route handler performs
+   * the actual backend sign-in and returns a standard AuthResponse.
+   */
+  guest() {
+    return apiFetch<AuthResponse>("/auth/guest", { method: "POST" });
+  },
+
   /** POST /auth/verify-email - sends a 6-digit code (also used for forgot-password) */
   sendVerificationEmail(email: string) {
     return apiFetch<{ message: string; id: string }>("/auth/verify-email", {
@@ -527,7 +536,7 @@ export interface CourseVideo {
 
 /**
  * Per-lesson lock/completion state, as decided by the backend. This is the
- * source of truth for the lesson gate — the client must NOT recompute unlock
+ * source of truth for the lesson gate - the client must NOT recompute unlock
  * state from `completedLessonIds` or lesson order. Entries are returned in full
  * course sequence order (module order, then lesson order).
  */
@@ -1116,7 +1125,7 @@ export const articleApi = {
 // ── Feedback endpoint ─────────────────────────────────────────────────────────
 
 export const feedbackApi = {
-  /** POST /feedback [requires auth] — emailed to the developer server-side. */
+  /** POST /feedback [requires auth] - emailed to the developer server-side. */
   send(data: {
     message: string;
     email?: string;

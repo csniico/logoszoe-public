@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Camera, Mail, Lock, Flame, Save, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { userApi, storageApi, streakApi, ApiError } from "@/lib/api";
+import { obfuscateEmail, isGuestEmail } from "@/lib/utils";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -195,8 +196,8 @@ function PersonalInfoForm({
         <div className="relative">
           <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
-            type="email"
-            value={email}
+            type="text"
+            value={obfuscateEmail(email)}
             readOnly
             className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-100 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed"
           />
@@ -294,18 +295,73 @@ function ChangePasswordForm({ userId }: { userId: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+// ── Identity card (avatar + name + email + role + member since) ──────────────────
+
+function IdentityCard({
+  user,
+  initials,
+  displayName,
+  onUploaded,
+}: {
+  user: import("@/lib/api").User;
+  initials: string;
+  displayName: string;
+  onUploaded: () => void;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
+      <AvatarUpload
+        userId={user._id}
+        profilePicture={user.profilePicture}
+        initials={initials}
+        onUploaded={onUploaded}
+      />
+      <h2 className="font-serif font-bold text-gray-900 mt-4 text-lg">{displayName}</h2>
+      <p className="text-sm text-gray-400 mt-0.5">{obfuscateEmail(user.email)}</p>
+      <span className="inline-block mt-3 text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-100 px-2.5 py-1 rounded-full capitalize">
+        {user.role}
+      </span>
+      <p className="text-xs text-gray-400 mt-3">
+        Member since {formatMemberSince(user.createdAt)}
+      </p>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
   const [streakCount, setStreakCount] = useState<number | null>(null);
+  const guest = user ? isGuestEmail(user.email) : false;
 
   useEffect(() => {
+    if (guest) return; // guests have no personal streak to fetch
     streakApi.getMyStreak().then((s) => setStreakCount(s.currentStreak)).catch(() => {});
-  }, []);
+  }, [guest]);
 
   if (!user) return null;
 
   const initials = `${user.firstname[0] ?? ""}${user.lastname?.[0] ?? ""}`.toUpperCase();
   const displayName = `${user.firstname} ${user.lastname ?? ""}`.trim();
+
+  // Guest session: identity only — no editable fields, streak, or danger zone.
+  if (guest) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h1 className="font-serif text-3xl font-bold text-gray-900 leading-tight">My Profile</h1>
+          <p className="text-sm text-gray-500 mt-1.5">You&apos;re exploring as a guest.</p>
+        </div>
+        <div className="max-w-sm">
+          <IdentityCard
+            user={user}
+            initials={initials}
+            displayName={displayName}
+            onUploaded={refreshUser}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -319,23 +375,12 @@ export default function ProfilePage() {
 
         {/* Left - avatar + identity */}
         <div className="space-y-4">
-          {/* Avatar card */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
-            <AvatarUpload
-              userId={user._id}
-              profilePicture={user.profilePicture}
-              initials={initials}
-              onUploaded={refreshUser}
-            />
-            <h2 className="font-serif font-bold text-gray-900 mt-4 text-lg">{displayName}</h2>
-            <p className="text-sm text-gray-400 mt-0.5">{user.email}</p>
-            <span className="inline-block mt-3 text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-100 px-2.5 py-1 rounded-full capitalize">
-              {user.role}
-            </span>
-            <p className="text-xs text-gray-400 mt-3">
-              Member since {formatMemberSince(user.createdAt)}
-            </p>
-          </div>
+          <IdentityCard
+            user={user}
+            initials={initials}
+            displayName={displayName}
+            onUploaded={refreshUser}
+          />
 
           {/* Stats card */}
           <div className="bg-white rounded-xl border border-gray-100 p-5">

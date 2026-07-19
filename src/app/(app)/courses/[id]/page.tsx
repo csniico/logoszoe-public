@@ -81,7 +81,7 @@ function ContentSection({ title, children }: { title: string; children: React.Re
 // lesson directly. Lock/completion state comes straight from the backend
 // (`/progress` → `lessons[]`); the client never decides it. A locked lesson is
 // non-clickable and never navigates into the lesson. The completion indicator is
-// a plain (non-interactive) green check — there is no way to mark a lesson
+// a plain (non-interactive) green check - there is no way to mark a lesson
 // complete from here.
 
 function LessonCard({
@@ -254,7 +254,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   // Lock/completion state is decided by the backend and delivered per-lesson in
   // `progress.lessons`. We never recompute it from `completedLessonIds` or lesson
   // order. Lessons without an entry (e.g. progress failed to load) default to
-  // locked — the server enforces the gate regardless.
+  // locked - the server enforces the gate regardless.
   const completedIds = new Set(
     (progress?.lessons ?? []).filter((l) => l.completed).map((l) => l.lessonId),
   );

@@ -112,6 +112,13 @@ function StatCard({
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
+// Deterministic pseudo-random height so the skeleton renders identically on
+// the server and client (avoids a hydration mismatch that Math.random() causes).
+function barHeight(i: number) {
+  const seeded = Math.abs(Math.sin((i + 1) * 12.9898) * 43758.5453) % 1;
+  return 20 + seeded * 60;
+}
+
 function ChartSkeleton({ height = 140 }: { height?: number }) {
   return (
     <div className="animate-pulse flex items-end gap-1.5 w-full" style={{ height }}>
@@ -119,7 +126,7 @@ function ChartSkeleton({ height = 140 }: { height?: number }) {
         <div
           key={i}
           className="flex-1 bg-gray-100 rounded-t-sm"
-          style={{ height: `${20 + Math.random() * 60}%` }}
+          style={{ height: `${barHeight(i)}%` }}
         />
       ))}
     </div>
