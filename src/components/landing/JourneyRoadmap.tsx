@@ -1,51 +1,53 @@
+import { BookOpen, GraduationCap, Mic2, Newspaper, Heart, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 interface Step {
+  icon: LucideIcon;
   title: string;
   description: string;
-  image: string;
 }
 
 // Ordered as a progressive walk of faith - devotionals → courses → podcasts →
-// articles → prayer → community. Imagery is reused from the banner set (+ one
-// mission image) rather than introducing new assets.
+// articles → prayer → community.
 const steps: Step[] = [
   {
+    icon: BookOpen,
     title: "Daily Devotionals",
     description: "Start each day with purpose. Short, powerful devotionals to anchor your morning in the Word.",
-    image: "/images/banner_image_1.jpg",
   },
   {
+    icon: GraduationCap,
     title: "In-depth Courses",
     description: "Go deeper. Structured courses taught by trusted voices help you build a firm scriptural foundation.",
-    image: "/images/banner_image_2.jpg",
   },
   {
+    icon: Mic2,
     title: "Podcasts",
     description: "Keep growing on the go. Faith-building conversations and teaching for your commute and quiet moments.",
-    image: "/images/banner_image_3.jpg",
   },
   {
+    icon: Newspaper,
     title: "Articles",
     description: "Explore the breadth of the faith - from theology to everyday Christian living, at your own pace.",
-    image: "/images/banner_image_4.jpg",
   },
   {
+    icon: Heart,
     title: "Prayer Wall",
     description: "Turn what you learn into intercession. Submit requests and stand in prayer for one another.",
-    image: "/images/banner_image_5.jpg",
   },
   {
+    icon: Users,
     title: "Community",
     description: "Arrive where the journey leads - a family of believers to share testimonies and grow together.",
-    image: "/images/about/mission.jpg",
   },
 ];
 
 /**
- * "Everything For Your Faith Journey" as a list of cards.
+ * "Everything For Your Faith Journey" as a list of icon cards.
  *
  * Presentational + static server component. The `steps` array is the single
- * source of truth (OCP); each entry renders a card with image, then title and
- * description.
+ * source of truth (OCP); each entry renders a card with a plain (uncolored)
+ * icon, then title and description.
  */
 export function JourneyRoadmap() {
   return (
@@ -65,28 +67,18 @@ export function JourneyRoadmap() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {steps.map((step) => (
+          {steps.map(({ icon: Icon, title, description }) => (
             <article
-              key={step.title}
-              className="flex flex-col rounded-2xl overflow-hidden bg-white ring-1 ring-primary-100/70 shadow-sm hover:shadow-md transition-shadow"
+              key={title}
+              className="flex flex-col rounded-2xl bg-white ring-1 ring-primary-100/70 shadow-sm hover:shadow-md transition-shadow p-6"
             >
-              <div className="aspect-[16/10] overflow-hidden bg-primary-100/40">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={step.image}
-                  alt={step.title}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="font-serif text-xl font-semibold text-primary-900 mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-primary-900/70 text-sm leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
+              <Icon size={26} strokeWidth={1.75} className="text-primary-900 mb-4" aria-hidden />
+              <h3 className="font-serif text-xl font-semibold text-primary-900 mb-2">
+                {title}
+              </h3>
+              <p className="text-primary-900/70 text-sm leading-relaxed">
+                {description}
+              </p>
             </article>
           ))}
         </div>
