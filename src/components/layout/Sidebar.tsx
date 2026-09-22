@@ -28,6 +28,7 @@ import {
   Bookmark,
   Search,
   LifeBuoy,
+  Music2,
 } from "lucide-react";
 import { PODCAST_CATEGORIES, PodcastCategory } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
@@ -56,6 +57,7 @@ const bottomItems = [
   { label: "Bookmarks",   href: "/bookmarks",    icon: Bookmark },
   { label: "Submissions", href: "/submissions",  icon: ClipboardList },
   { label: "Community",   href: "/community",    icon: MessageSquare },
+  { label: "TikTok",      href: "/tiktok",       icon: Music2 },
   { label: "Prayer",      href: "/prayer",       icon: Heart },
   { label: "Donation",    href: "/donations",    icon: HandHeart },
   { label: "Shop",        href: "/shop",         icon: ShoppingBag },

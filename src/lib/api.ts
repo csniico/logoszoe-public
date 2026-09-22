@@ -915,6 +915,71 @@ export const videoApi = {
   },
 };
 
+// ── TikTok types + endpoints ─────────────────────────────────────────────────
+
+export interface TiktokVideo {
+  _id: string;
+  /** TikTok's own video id - the handle used across the app. */
+  videoId: string;
+  openId: string;
+  title?: string;
+  videoDescription?: string;
+  /** Seconds. */
+  duration?: number;
+  height?: number;
+  width?: number;
+  /**
+   * TikTok expires cover links after roughly 6 hours. The backend renews them
+   * on a cron, so a broken thumbnail means that job needs attention.
+   */
+  coverImageUrl?: string;
+  coverImageFetchedAt?: string;
+  /** Deep link to the video on tiktok.com. */
+  shareUrl?: string;
+  /** Embed URL - TikTok's terms require playback through their own player. */
+  embedLink?: string;
+  likeCount?: number;
+  commentCount?: number;
+  shareCount?: number;
+  viewCount?: number;
+  createTime: string;
+  isVisible: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TiktokProfile {
+  openId: string;
+  displayName?: string;
+  avatarUrl?: string;
+  profileDeepLink?: string;
+  lastSyncedAt?: string;
+}
+
+export const tiktokApi = {
+  /**
+   * GET /tiktok/videos?page=1&limit=25 → paginated - no auth required.
+   * Served from the backend's cache; TikTok is never called per request.
+   */
+  getAll(page = 1, limit = 25) {
+    return apiFetch<{
+      data: TiktokVideo[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/tiktok/videos?page=${page}&limit=${limit}`);
+  },
+  /** GET /tiktok/videos/:videoId - no auth required */
+  getById(videoId: string) {
+    return apiFetch<TiktokVideo>(`/tiktok/videos/${encodeURIComponent(videoId)}`);
+  },
+  /** GET /tiktok/profile → connected account, for the feed header */
+  getProfile() {
+    return apiFetch<TiktokProfile>("/tiktok/profile");
+  },
+};
+
 // ── Shop types + endpoints ───────────────────────────────────────────────────
 
 export type ProductStatus = "coming_soon" | "available" | "out_of_stock" | "pre-order";
