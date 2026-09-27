@@ -834,6 +834,30 @@ export interface BiblePassageResult {
   passage: string[];
 }
 
+export interface BibleTranslation {
+  translationId: string;
+  name: string;
+  englishName: string;
+  language: string;
+  languageName: string;
+  textDirection: string;
+}
+
+export interface BibleCommentary {
+  commentaryId: string;
+  name: string;
+  englishName: string;
+  language: string;
+  languageName: string;
+}
+
+export interface BibleDictionaryEntry {
+  slug: string;
+  term: string;
+  definition: string;
+  scriptureRefs: string[];
+}
+
 // Canonical Bible book order - used to sort API results correctly.
 export const BIBLE_BOOK_ORDER: string[] = [
   // ── Old Testament (39) ──────────────────────────────────────────────────────
@@ -887,6 +911,30 @@ export const bibleApi = {
   /** GET /bible/:abbrev/chapters/:chapter/verses */
   getVerses(abbrev: string, chapter: number) {
     return apiFetch<BibleChapter>(`/bible/${abbrev}/chapters/${chapter}/verses`);
+  },
+  /** GET /bible/translations */
+  getTranslations() {
+    return apiFetch<BibleTranslation[]>("/bible/translations");
+  },
+  /** GET /bible/translations/:translationId/:abbrev/:chapter */
+  getTranslationChapter(translationId: string, abbrev: string, chapter: number) {
+    return apiFetch<BibleChapter>(`/bible/translations/${translationId}/${abbrev}/${chapter}`);
+  },
+  /** GET /bible/commentaries */
+  getCommentaries() {
+    return apiFetch<BibleCommentary[]>("/bible/commentaries");
+  },
+  /** GET /bible/commentaries/:commentaryId/:abbrev/:chapter */
+  getCommentaryChapter(commentaryId: string, abbrev: string, chapter: number) {
+    return apiFetch<BibleChapter>(`/bible/commentaries/${commentaryId}/${abbrev}/${chapter}`);
+  },
+  /** GET /bible/dictionary?term= */
+  searchDictionary(term: string) {
+    return apiFetch<BibleDictionaryEntry[]>(`/bible/dictionary?term=${encodeURIComponent(term)}`);
+  },
+  /** GET /bible/dictionary/:term */
+  getDictionaryEntry(term: string) {
+    return apiFetch<BibleDictionaryEntry>(`/bible/dictionary/${encodeURIComponent(term)}`);
   },
 };
 

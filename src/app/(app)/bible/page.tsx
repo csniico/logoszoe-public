@@ -48,9 +48,17 @@ export default function BiblePage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Bible</h1>
-        <p className="text-gray-500 text-sm mt-1">Read and explore the scriptures.</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Bible</h1>
+          <p className="text-gray-500 text-sm mt-1">Read and explore the scriptures.</p>
+        </div>
+        <Link
+          href="/bible/dictionary"
+          className="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+        >
+          Dictionary
+        </Link>
       </div>
 
       {/* Testament tabs */}
